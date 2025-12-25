@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_wK8J6zcDYoEtCa36X2uhfpUbstqM",
+  "orgId": "team_AZprVNZ5jg9qliGTf4E6ZOSx",
+  "projectName": "tomaso-ecommerce",
+  "settings": {
+    "createdAt": 1766683013691,
+    "framework": "vite",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": "npm run build",
+    "outputDirectory": "dist",
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}
