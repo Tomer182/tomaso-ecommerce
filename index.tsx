@@ -223,7 +223,7 @@ interface CartItem extends Product {
   quantity: number;
 }
 
-type ViewState = 'home' | 'shop' | 'product-detail' | 'cart-page' | 'checkout' | 'success' | 'wishlist-page' | '404';
+type ViewState = 'home' | 'shop' | 'product-detail' | 'cart-page' | 'checkout' | 'success' | 'wishlist-page' | 'about' | '404';
 
 // --- Product Catalog ---
 
@@ -625,8 +625,11 @@ const App = () => {
   const [recentlyViewed, setRecentlyViewed] = useState<string[]>(() => JSON.parse(localStorage.getItem('autopilot_recent') || '[]'));
   
   const [activeCategory, setActiveCategory] = useState('All');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'new' | 'sale'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ ids: string[]; reason: string } | null>(null);
+  const [showCartDrawer, setShowCartDrawer] = useState(false);
+  const [lastAddedProduct, setLastAddedProduct] = useState<Product | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [sortBy, setSortBy] = useState('Featured');
@@ -686,11 +689,16 @@ const App = () => {
 
   const addToCart = (product: Product) => {
     setIsAddingToCart(product.id);
+    setLastAddedProduct(product);
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
       return [...prev, { ...product, quantity: 1 }];
     });
+    
+    // Show cart drawer for 3 seconds
+    setShowCartDrawer(true);
+    setTimeout(() => setShowCartDrawer(false), 3000);
     
     // Smooth transition to cart after a tiny delay for optimistic feedback
     setTimeout(() => {
@@ -809,9 +817,9 @@ const App = () => {
             <nav className="hidden lg:flex items-center gap-8">
               {[
                 { label: t('home'), action: () => navigateToHome(), active: view === 'home' },
-                { label: t('shop'), action: () => navigateToShop('All'), active: view === 'shop' && activeCategory === 'All' },
-                { label: t('newArrivals'), action: () => navigateToShop('Smart Gadgets'), active: false },
-                { label: t('about'), action: () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), active: false },
+                { label: t('shop'), action: () => { setActiveFilter('all'); navigateToShop('All'); }, active: view === 'shop' && activeFilter === 'all' },
+                { label: t('newArrivals'), action: () => { setActiveFilter('new'); setView('shop'); setActiveCategory('All'); }, active: view === 'shop' && activeFilter === 'new' },
+                { label: t('about'), action: () => setView('about'), active: view === 'about' },
               ].map((link, i) => (
                 <button 
                   key={i}
@@ -824,8 +832,8 @@ const App = () => {
               ))}
               
               <button 
-                onClick={() => navigateToShop('All')} 
-                className="relative group text-[11px] font-black uppercase tracking-[0.15em] text-shop-sale hover:text-[#B91C1C] transition-colors flex items-center gap-1.5"
+                onClick={() => { setActiveFilter('sale'); setView('shop'); setActiveCategory('All'); }} 
+                className={`relative group text-[11px] font-black uppercase tracking-[0.15em] transition-colors flex items-center gap-1.5 ${activeFilter === 'sale' ? 'text-[#B91C1C]' : 'text-shop-sale hover:text-[#B91C1C]'}`}
               >
                 <Tag size={12} className="fill-shop-sale/20" />
                 {t('sale')}
@@ -844,8 +852,8 @@ const App = () => {
                  placeholder={t('searchPlaceholder')}
                  dir={LANGUAGES[lang].dir}
                />
-               <div className={`absolute top-1/2 -translate-y-1/2 text-shop-accent pointer-events-none ${LANGUAGES[lang].dir === 'rtl' ? 'right-5' : 'left-5'}`}>
-                 <Sparkles size={18} className={`${searchQuery ? 'animate-pulse' : ''}`} />
+               <div className={`absolute top-1/2 -translate-y-1/2 text-shop-muted pointer-events-none ${LANGUAGES[lang].dir === 'rtl' ? 'right-5' : 'left-5'}`}>
+                 <Search size={18} />
                </div>
                <button 
                  type="button" 
@@ -1180,8 +1188,12 @@ const App = () => {
                <div className="flex flex-col md:flex-row justify-between items-end border-b border-shop-border pb-8 mb-10 gap-6">
                  <div>
                    <button onClick={navigateToHome} className="text-xs font-bold uppercase tracking-widest text-shop-muted hover:text-shop-primary mb-2 flex items-center gap-2"><ArrowLeft size={12}/> Back Home</button>
-                   <h1 className="text-4xl lg:text-6xl font-bold tracking-tighter uppercase">{searchQuery ? `Search: "${searchQuery}"` : activeCategory}</h1>
+                   <h1 className="text-4xl lg:text-6xl font-bold tracking-tighter uppercase">
+                     {searchQuery ? `Search: "${searchQuery}"` : activeFilter === 'new' ? t('newArrivals') : activeFilter === 'sale' ? t('sale') : activeCategory}
+                   </h1>
                    {searchResults && <p className="text-shop-accent font-medium mt-2 flex items-center gap-2"><Sparkles size={16}/> AI Filter Active: {searchResults.reason || "Smart Match"}</p>}
+                   {activeFilter === 'new' && !searchResults && <p className="text-shop-cta font-medium mt-2">Showing all new products</p>}
+                   {activeFilter === 'sale' && !searchResults && <p className="text-shop-sale font-medium mt-2">Special offers and discounts</p>}
                  </div>
                  
                  {/* Mobile Search in Shop View */}
@@ -1254,6 +1266,10 @@ const App = () => {
                           INITIAL_PRODUCTS
                             .filter(p => {
                               if (searchResults) return searchResults.ids.includes(p.id);
+                              // Filter by special filters (new/sale)
+                              if (activeFilter === 'new' && !p.isNew) return false;
+                              if (activeFilter === 'sale' && !p.isSale) return false;
+                              // Then filter by category
                               return activeCategory === 'All' || p.category === activeCategory;
                             })
                             .sort((a, b) => {
@@ -1280,6 +1296,8 @@ const App = () => {
                      {/* Empty State */}
                      {!isGlobalLoading && INITIAL_PRODUCTS.filter(p => {
                         if (searchResults) return searchResults.ids.includes(p.id);
+                        if (activeFilter === 'new' && !p.isNew) return false;
+                        if (activeFilter === 'sale' && !p.isSale) return false;
                         return activeCategory === 'All' || p.category === activeCategory;
                      }).length === 0 && (
                        <div className="py-20 text-center border-2 border-dashed rounded-3xl">
@@ -1509,6 +1527,104 @@ const App = () => {
             <button onClick={() => navigateToHome()} className="btn-cta px-12 py-5 text-base uppercase font-bold tracking-widest">Return to Base</button>
           </motion.div>
         )}
+
+        {/* ABOUT VIEW */}
+        {view === 'about' && (
+          <motion.div key="about" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-7xl mx-auto px-4 py-20">
+            <button onClick={() => navigateToHome()} className="flex items-center gap-2 text-[10px] font-bold uppercase mb-8 text-shop-muted hover:text-shop-primary transition-colors">
+              <ArrowLeft size={16}/> Back Home
+            </button>
+            
+            {/* Hero Section */}
+            <div className="text-center mb-20">
+              <h1 className="text-5xl lg:text-7xl font-bold tracking-tighter uppercase mb-6">About Us</h1>
+              <p className="text-xl text-shop-text-secondary max-w-2xl mx-auto">We're on a mission to revolutionize the way you discover and acquire premium hardware.</p>
+            </div>
+
+            {/* Mission Section */}
+            <div className="grid lg:grid-cols-2 gap-16 items-center mb-24">
+              <div>
+                <h2 className="text-3xl font-bold tracking-tighter uppercase mb-6">Our Mission</h2>
+                <p className="text-shop-text-secondary text-lg leading-relaxed mb-6">
+                  At Autopilot Commerce, we believe that finding the perfect product shouldn't be a chore. Our AI-powered platform curates the finest hardware, smart gadgets, and home decor from around the globe.
+                </p>
+                <p className="text-shop-text-secondary text-lg leading-relaxed">
+                  Every product in our collection is hand-selected for quality, design, and innovation. We partner with manufacturers who share our commitment to excellence.
+                </p>
+              </div>
+              <div className="relative">
+                <img src="https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&q=80&w=800" alt="Our Team" className="rounded-3xl shadow-2xl" />
+              </div>
+            </div>
+
+            {/* Values Section */}
+            <div className="bg-shop-primary rounded-[3rem] p-12 lg:p-20 text-white mb-24">
+              <h2 className="text-3xl font-bold tracking-tighter uppercase mb-12 text-center">Our Values</h2>
+              <div className="grid md:grid-cols-3 gap-10">
+                {[
+                  { icon: Award, title: 'Quality First', desc: 'Every product meets our rigorous quality standards before joining our collection.' },
+                  { icon: Globe, title: 'Global Reach', desc: 'We ship worldwide with fast, reliable logistics and full tracking.' },
+                  { icon: ShieldCheck, title: 'Trust & Security', desc: 'Your data and transactions are protected with enterprise-grade security.' },
+                ].map((item, i) => (
+                  <div key={i} className="text-center">
+                    <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                      <item.icon size={28} className="text-shop-accent" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-3">{item.title}</h3>
+                    <p className="text-blue-100/70">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* CTA Section */}
+            <div className="text-center">
+              <h2 className="text-3xl font-bold tracking-tighter uppercase mb-6">Ready to Explore?</h2>
+              <p className="text-shop-text-secondary mb-10 max-w-xl mx-auto">Discover our curated collection of premium products and experience the future of shopping.</p>
+              <button onClick={() => navigateToShop('All')} className="btn-cta px-12 py-5 text-lg flex items-center gap-3 mx-auto">
+                Explore Collection <ArrowRight size={20} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Cart Drawer - shows after adding product */}
+      <AnimatePresence>
+        {showCartDrawer && lastAddedProduct && (
+          <motion.div
+            initial={{ opacity: 0, x: 400 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 400 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="fixed top-24 right-4 z-[100] w-[360px] bg-white rounded-3xl shadow-2xl border border-shop-border overflow-hidden"
+          >
+            <div className="bg-shop-cta text-white p-4 flex items-center gap-3">
+              <Check size={20} />
+              <span className="font-bold">Added to Cart!</span>
+              <button onClick={() => setShowCartDrawer(false)} className="ml-auto p-1 hover:bg-white/20 rounded-full">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="flex gap-4 mb-4">
+                <img src={lastAddedProduct.image} alt={lastAddedProduct.name} className="w-20 h-20 object-cover rounded-xl" />
+                <div className="flex-1">
+                  <h4 className="font-bold text-sm mb-1">{lastAddedProduct.name}</h4>
+                  <p className="text-shop-accent font-mono font-bold">${lastAddedProduct.price.toFixed(2)}</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => { setShowCartDrawer(false); setView('cart-page'); }} className="flex-1 btn-cta py-3 text-xs uppercase tracking-widest">
+                  View Cart ({itemCount})
+                </button>
+                <button onClick={() => setShowCartDrawer(false)} className="px-4 py-3 border border-shop-border rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-shop-bg transition-colors">
+                  Continue
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       <SocialProof />
@@ -1639,20 +1755,35 @@ const AIAssistant = ({ products, onAddToCart, currentView, navigateToProduct, la
       const session = ai.chats.create({
         model: 'gemini-3-flash-preview',
         config: {
-          systemInstruction: `You are 'Pilot', the advanced AI shopping assistant for Autopilot Commerce.
-Your personality: Warm, professional, slightly futuristic, helpful, concise.
-Your goal: Help users navigate the store, find products, and make decisions.
-Store Context: High-end tech, home decor, and smart gadgets.
+          systemInstruction: `You are 'Pilot', a friendly AI shopping assistant for Autopilot Commerce.
+
+CRITICAL RULE - ALWAYS ASK BEFORE RECOMMENDING:
+- NEVER recommend products immediately!
+- ALWAYS ask 1-2 clarifying questions FIRST
+- Understand: WHO is it for? BUDGET? STYLE preference? ROOM/USE CASE?
+
+Your personality: Friendly, curious, helpful - like a smart friend who genuinely wants to help.
+Store: High-end tech, home decor, smart gadgets.
+
 Product Catalog: ${JSON.stringify(products.map((p: any) => ({id: p.id, name: p.name, price: p.price, stock: p.stock, desc: p.description})))}
-LANGUAGE RULE: ALWAYS converse in ${langName}. Translate product names if appropriate for the conversation, but keep ID references internal.
-Rules:
-1. If a user asks for a gift, ALWAYS ask who it is for and the budget (Under $50, $50-150, $150+) before recommending.
-2. If asked about stock, check the 'stock' field.
-3. If asked about shipping, 'Free global shipping over $500. Secure logistics.'
-4. If the user mentions a specific product name from the catalog, provide its price and a brief compelling description.
-5. Keep responses short (under 3 sentences) unless listing products.
-6. When recommending products, put their names in **bold**.
-7. If you recommend a product, act as if you are showing it to them.`,
+
+LANGUAGE: ALWAYS respond in ${langName}.
+
+CONVERSATION FLOW:
+1. User says something → Ask a clarifying question (budget/recipient/style)
+2. User answers → Ask ONE more question if needed
+3. ONLY THEN recommend 2-3 specific products with **bold names**
+
+Example:
+User: "I need a gift"
+You: "I'd love to help! 🎁 Who is this gift for? (partner, parent, friend, colleague?)"
+
+RULES:
+- Use emojis sparingly but warmly
+- Keep responses short (2-3 sentences max)
+- Put product names in **bold**
+- If user asks about shipping: "Free global shipping over $500!"
+- If user asks about stock: check the stock field`,
         }
       });
       setChatSession(session);
@@ -1691,15 +1822,27 @@ Rules:
     setHasInteracted(true);
     setIsTyping(true);
 
-    // If no AI, use fallback response
+    // If no AI, use smart fallback that asks questions
     if (!chatSession) {
       setTimeout(() => {
         setIsTyping(false);
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          text: `I found some great options for you! Check out our **Levitating Plant Pot** or **Premium Smart Mug** - both are popular choices. 🎁` 
-        }]);
-      }, 1000);
+        const lowerText = text.toLowerCase();
+        let response = "";
+        
+        if (lowerText.includes('gift') || lowerText.includes('מתנה')) {
+          response = "Awesome! Finding the perfect gift is my specialty 🎁\n\n**Who's the lucky person?**\n• My partner ❤️\n• A parent\n• A friend\n• A colleague";
+        } else if (lowerText.includes('home') || lowerText.includes('בית')) {
+          response = "Love it! Let's find something amazing for your space 🏠\n\n**Which room are we styling?**\n• Living room\n• Bedroom\n• Home office\n• Any room - surprise me!";
+        } else if (lowerText.includes('surprise')) {
+          response = "Ooh, I love surprises! Let me pick something special ✨\n\n**Quick question - what's your vibe?**\n• Techy & modern\n• Cozy & ambient\n• Minimalist & clean\n• Bold & unique";
+        } else if (lowerText.includes('best') || lowerText.includes('popular')) {
+          response = "Our best sellers are 🔥! Quick question first...\n\n**What's your budget looking like?**\n• Under $50 (great starters)\n• $50 - $150 (sweet spot)\n• $150+ (premium picks)";
+        } else {
+          response = "Hey there! 👋 I'm excited to help you discover something amazing!\n\n**What brings you here today?**\n• Looking for a gift 🎁\n• Upgrading my space 🏠\n• Want cool tech ⚡\n• Just browsing ✨";
+        }
+        
+        setMessages(prev => [...prev, { role: 'assistant', text: response }]);
+      }, 800);
       return;
     }
 
@@ -1748,10 +1891,72 @@ Rules:
   };
 
   const quickActions = [
-    { label: "🎁 Gift ideas", query: "I need a gift" },
-    { label: "⭐ Best sellers", query: "Show me best sellers" },
-    { label: "💡 Smart home", query: "Smart gadgets for my home" },
+    { label: "🎁 Help me find a gift", query: "I'm looking for a gift" },
+    { label: "🏠 Something for my home", query: "I want something nice for my home" },
+    { label: "✨ Surprise me!", query: "Surprise me with something cool" },
   ];
+
+  // Robot Mascot Component
+  const RobotMascot = ({ size = 'md', animate = true }: { size?: 'sm' | 'md' | 'lg', animate?: boolean }) => {
+    const sizes = { sm: 40, md: 56, lg: 80 };
+    const s = sizes[size];
+    return (
+      <motion.div 
+        className="relative"
+        animate={animate ? { y: [0, -4, 0] } : {}}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        style={{ width: s, height: s }}
+      >
+        {/* Robot body */}
+        <div 
+          className="absolute inset-0 rounded-2xl shadow-lg"
+          style={{ 
+            background: 'linear-gradient(145deg, #4F46E5 0%, #7C3AED 50%, #A855F7 100%)',
+            borderRadius: s * 0.3,
+          }}
+        >
+          {/* Face area */}
+          <div className="absolute inset-2 bg-white/10 rounded-xl backdrop-blur-sm" style={{ borderRadius: s * 0.2 }}>
+            {/* Eyes */}
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 flex gap-2">
+              <motion.div 
+                className="bg-white rounded-full shadow-inner"
+                style={{ width: s * 0.18, height: s * 0.18 }}
+                animate={animate ? { scaleY: [1, 0.1, 1] } : {}}
+                transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
+              >
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-900 rounded-full" style={{ width: s * 0.08, height: s * 0.08 }} />
+              </motion.div>
+              <motion.div 
+                className="bg-white rounded-full shadow-inner"
+                style={{ width: s * 0.18, height: s * 0.18 }}
+                animate={animate ? { scaleY: [1, 0.1, 1] } : {}}
+                transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
+              >
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-900 rounded-full" style={{ width: s * 0.08, height: s * 0.08 }} />
+              </motion.div>
+            </div>
+            {/* Mouth */}
+            <motion.div 
+              className="absolute bottom-1/4 left-1/2 -translate-x-1/2 bg-white/80 rounded-full"
+              style={{ width: s * 0.25, height: s * 0.08 }}
+              animate={animate ? { scaleX: [1, 1.2, 1] } : {}}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            />
+          </div>
+          {/* Antenna */}
+          <motion.div 
+            className="absolute -top-2 left-1/2 -translate-x-1/2"
+            animate={animate ? { rotate: [-10, 10, -10] } : {}}
+            transition={{ duration: 1, repeat: Infinity }}
+          >
+            <div className="w-1 h-3 bg-white/60 rounded-full mx-auto" />
+            <div className="w-2.5 h-2.5 bg-yellow-400 rounded-full -mt-0.5 shadow-lg shadow-yellow-400/50" />
+          </motion.div>
+        </div>
+      </motion.div>
+    );
+  };
 
   // Collapsed floating button
   if (peekState === 'dismissed' && !isOpen) {
@@ -1762,18 +1967,12 @@ Rules:
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-24 lg:bottom-8 z-[100] w-16 h-16 rounded-full flex items-center justify-center shadow-2xl ${LANGUAGES[lang].dir === 'rtl' ? 'left-6' : 'right-6'}`}
-        style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        }}
+        className={`fixed bottom-24 lg:bottom-8 z-[100] ${LANGUAGES[lang].dir === 'rtl' ? 'left-6' : 'right-6'}`}
       >
-        <motion.div
-          animate={{ rotate: [0, 10, -10, 0] }}
-          transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-        >
-          <Sparkles size={28} className="text-white" />
-        </motion.div>
-        <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse" />
+        <RobotMascot size="md" />
+        <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white animate-pulse flex items-center justify-center">
+          <span className="text-white text-[8px] font-bold">1</span>
+        </span>
       </motion.button>
     );
   }
@@ -1787,67 +1986,82 @@ Rules:
             initial={{ opacity: 0, y: 50, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.8 }}
-            className={`fixed bottom-24 lg:bottom-8 z-[100] flex flex-col gap-3 ${LANGUAGES[lang].dir === 'rtl' ? 'items-start left-6' : 'items-end right-6'}`}
+            className={`fixed bottom-24 lg:bottom-8 z-[100] flex flex-col gap-4 ${LANGUAGES[lang].dir === 'rtl' ? 'items-start left-6' : 'items-end right-6'}`}
           >
-            {/* Greeting bubble */}
+            {/* Modern greeting card */}
             <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-              className={`relative bg-gradient-to-br from-white to-gray-50 px-5 py-4 rounded-2xl shadow-2xl border border-gray-100 max-w-[280px] ${LANGUAGES[lang].dir === 'rtl' ? 'rounded-bl-sm' : 'rounded-br-sm'}`}
-            >
-              <button 
-                onClick={(e) => { e.stopPropagation(); setPeekState('dismissed'); }} 
-                className="absolute -top-2 -right-2 bg-gray-100 p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-all shadow-sm"
-              >
-                <X size={12}/>
-              </button>
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0">
-                  <Sparkles size={18} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">Hey! 👋 Need help finding something?</p>
-                  <p className="text-xs text-gray-500 mt-1">I can help you discover the perfect product</p>
-                </div>
-              </div>
-              <div className="flex gap-2 mt-4">
-                <motion.button 
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => { setIsOpen(true); setMode('chat'); }}
-                  className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:shadow-lg transition-all"
-                >
-                  Let's chat! ✨
-                </motion.button>
-                <button 
-                  onClick={() => setPeekState('dismissed')}
-                  className="px-4 py-2.5 text-gray-400 text-sm font-medium hover:text-gray-600 transition-colors"
-                >
-                  Later
-                </button>
-              </div>
-            </motion.div>
-
-            {/* Floating avatar button */}
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => { setIsOpen(true); setMode('chat'); }}
-              className="relative w-16 h-16 rounded-full shadow-2xl overflow-hidden group"
-              style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.2, type: "spring" }}
+              className="relative bg-white rounded-3xl shadow-2xl overflow-hidden max-w-[320px]"
+              style={{ 
+                boxShadow: '0 20px 60px -15px rgba(79, 70, 229, 0.4), 0 10px 20px -5px rgba(0,0,0,0.1)',
               }}
             >
-              <motion.div
-                animate={{ 
-                  scale: [1, 1.2, 1],
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="absolute inset-0 bg-white/20 rounded-full"
-              />
-              <Sparkles size={28} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse" />
+              {/* Gradient header */}
+              <div 
+                className="px-5 py-4"
+                style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)' }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur">
+                    <Sparkles size={20} className="text-white" />
+                  </div>
+                  <div className="text-white">
+                    <p className="font-bold text-sm">Pilot Assistant</p>
+                    <p className="text-xs opacity-80">Online now</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Content */}
+              <div className="p-5">
+                <p className="text-gray-800 font-medium text-base mb-1">Hey there! 👋</p>
+                <p className="text-gray-500 text-sm mb-4">Looking for something special? I'll help you find the perfect match!</p>
+                
+                <div className="flex gap-2">
+                  <motion.button 
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => { setIsOpen(true); setMode('chat'); }}
+                    className="flex-1 py-3 px-4 rounded-xl font-semibold text-sm text-white shadow-lg"
+                    style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)' }}
+                  >
+                    Start chatting ✨
+                  </motion.button>
+                  <button 
+                    onClick={() => setPeekState('dismissed')}
+                    className="py-3 px-4 rounded-xl font-medium text-sm text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+                  >
+                    Later
+                  </button>
+                </div>
+              </div>
+              
+              {/* Close button */}
+              <button 
+                onClick={(e) => { e.stopPropagation(); setPeekState('dismissed'); }} 
+                className="absolute top-3 right-3 p-1.5 bg-white/20 rounded-full text-white/80 hover:text-white hover:bg-white/30 transition-all"
+              >
+                <X size={14}/>
+              </button>
+            </motion.div>
+
+            {/* Robot mascot button */}
+            <motion.button 
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => { setIsOpen(true); setMode('chat'); }}
+              className="relative"
+            >
+              <RobotMascot size="lg" />
+              <motion.span 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-3 border-white shadow-lg flex items-center justify-center"
+              >
+                <MessageCircle size={12} className="text-white" />
+              </motion.span>
             </motion.button>
           </motion.div>
         )}
@@ -1868,26 +2082,24 @@ Rules:
         }}
         dir={LANGUAGES[lang].dir}
       >
-        {/* Header - Modern gradient */}
+        {/* Header - Modern gradient with mascot */}
         <div 
-          className="p-5 flex items-center justify-between text-white shrink-0 relative overflow-hidden"
+          className="p-4 flex items-center justify-between text-white shrink-0 relative overflow-hidden"
           style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
           }}
         >
-          <div className="absolute inset-0 opacity-30">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
           </div>
           <div className="flex items-center gap-3 relative z-10">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
-              <Sparkles size={22} className="text-white" />
-            </div>
+            <RobotMascot size="sm" animate={false} />
             <div>
-              <h3 className="font-bold text-lg leading-tight">Pilot AI</h3>
+              <h3 className="font-bold text-lg leading-tight">Pilot</h3>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                <p className="text-xs opacity-80">Online • Ready to help</p>
+                <p className="text-xs opacity-80">Your shopping buddy</p>
               </div>
             </div>
           </div>
@@ -1901,23 +2113,34 @@ Rules:
           </div>
         </div>
 
-        {/* Initial Mode - Quick start */}
+        {/* Initial Mode - Friendly intro */}
         {mode === 'initial' && (
-          <div className="flex-1 flex flex-col p-6 bg-gradient-to-b from-gray-50 to-white">
+          <div className="flex-1 flex flex-col p-6 bg-gradient-to-b from-indigo-50/50 to-white">
             <div className="flex-1 flex flex-col items-center justify-center text-center">
               <motion.div 
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
+                initial={{ scale: 0, rotate: -10 }}
+                animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: "spring", stiffness: 200 }}
-                className="w-20 h-20 rounded-3xl flex items-center justify-center mb-6 shadow-xl"
-                style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                }}
+                className="mb-4"
               >
-                <MessageCircle size={36} className="text-white" />
+                <RobotMascot size="lg" />
               </motion.div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">Hi there! 👋</h3>
-              <p className="text-gray-500 mb-8 max-w-[250px]">I'm Pilot, your personal shopping assistant. How can I help?</p>
+              <motion.h3 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-2xl font-bold text-gray-800 mb-2"
+              >
+                Hey, I'm Pilot! 🚀
+              </motion.h3>
+              <motion.p 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="text-gray-500 mb-8 max-w-[280px]"
+              >
+                I'll ask a few questions to find you the <strong>perfect</strong> product. Ready?
+              </motion.p>
               
               {/* Quick actions */}
               <div className="w-full space-y-2 mb-6">
@@ -2083,7 +2306,8 @@ Rules:
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder="Ask me anything..."
-                    className="w-full bg-gray-100 py-3.5 px-4 rounded-xl outline-none focus:ring-2 focus:ring-violet-200 focus:bg-white transition-all text-sm text-gray-800 placeholder:text-gray-400"
+                    className="w-full bg-gray-100 py-3.5 px-4 rounded-xl outline-none focus:ring-2 focus:ring-violet-200 focus:bg-white transition-all text-sm placeholder:text-gray-400"
+                    style={{ color: '#1f2937' }}
                     onFocus={() => setMode('chat')}
                   />
                 </div>
