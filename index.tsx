@@ -48,6 +48,17 @@ import {
   Globe,
   Award,
   Send,
+  Accessibility,
+  ZoomIn,
+  ZoomOut,
+  Contrast,
+  Link2,
+  Pause,
+  Type,
+  MousePointer2,
+  FileText,
+  Shield,
+  ExternalLink,
   MessageSquare,
   Minimize2,
   Maximize2,
@@ -223,7 +234,7 @@ interface CartItem extends Product {
   quantity: number;
 }
 
-type ViewState = 'home' | 'shop' | 'product-detail' | 'cart-page' | 'checkout' | 'success' | 'wishlist-page' | 'about' | '404';
+type ViewState = 'home' | 'shop' | 'product-detail' | 'cart-page' | 'checkout' | 'success' | 'wishlist-page' | 'about' | 'accessibility' | 'terms' | 'privacy' | '404';
 
 // --- Product Catalog ---
 
@@ -1896,64 +1907,84 @@ RULES:
     { label: "✨ Surprise me!", query: "Surprise me with something cool" },
   ];
 
-  // Robot Mascot Component
+  // Cute Robot Mascot - Simple SVG based
   const RobotMascot = ({ size = 'md', animate = true }: { size?: 'sm' | 'md' | 'lg', animate?: boolean }) => {
-    const sizes = { sm: 40, md: 56, lg: 80 };
+    const sizes = { sm: 48, md: 64, lg: 80 };
     const s = sizes[size];
+    
     return (
       <motion.div 
-        className="relative"
-        animate={animate ? { y: [0, -4, 0] } : {}}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        animate={animate ? { y: [0, -5, 0] } : {}}
+        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
         style={{ width: s, height: s }}
+        className="relative"
       >
-        {/* Robot body */}
-        <div 
-          className="absolute inset-0 rounded-2xl shadow-lg"
-          style={{ 
-            background: 'linear-gradient(145deg, #4F46E5 0%, #7C3AED 50%, #A855F7 100%)',
-            borderRadius: s * 0.3,
-          }}
-        >
-          {/* Face area */}
-          <div className="absolute inset-2 bg-white/10 rounded-xl backdrop-blur-sm" style={{ borderRadius: s * 0.2 }}>
-            {/* Eyes */}
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 flex gap-2">
-              <motion.div 
-                className="bg-white rounded-full shadow-inner"
-                style={{ width: s * 0.18, height: s * 0.18 }}
-                animate={animate ? { scaleY: [1, 0.1, 1] } : {}}
-                transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
-              >
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-900 rounded-full" style={{ width: s * 0.08, height: s * 0.08 }} />
-              </motion.div>
-              <motion.div 
-                className="bg-white rounded-full shadow-inner"
-                style={{ width: s * 0.18, height: s * 0.18 }}
-                animate={animate ? { scaleY: [1, 0.1, 1] } : {}}
-                transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
-              >
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-900 rounded-full" style={{ width: s * 0.08, height: s * 0.08 }} />
-              </motion.div>
-            </div>
-            {/* Mouth */}
-            <motion.div 
-              className="absolute bottom-1/4 left-1/2 -translate-x-1/2 bg-white/80 rounded-full"
-              style={{ width: s * 0.25, height: s * 0.08 }}
-              animate={animate ? { scaleX: [1, 1.2, 1] } : {}}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            />
-          </div>
+        {/* Main robot face */}
+        <svg viewBox="0 0 100 100" width={s} height={s}>
           {/* Antenna */}
-          <motion.div 
-            className="absolute -top-2 left-1/2 -translate-x-1/2"
-            animate={animate ? { rotate: [-10, 10, -10] } : {}}
-            transition={{ duration: 1, repeat: Infinity }}
+          <motion.g
+            animate={animate ? { rotate: [-5, 5, -5] } : {}}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            style={{ transformOrigin: '50px 20px' }}
           >
-            <div className="w-1 h-3 bg-white/60 rounded-full mx-auto" />
-            <div className="w-2.5 h-2.5 bg-yellow-400 rounded-full -mt-0.5 shadow-lg shadow-yellow-400/50" />
-          </motion.div>
-        </div>
+            <rect x="47" y="5" width="6" height="15" rx="3" fill="#A78BFA" />
+            <circle cx="50" cy="5" r="6" fill="#FBBF24">
+              <animate attributeName="opacity" values="1;0.5;1" dur="1s" repeatCount="indefinite" />
+            </circle>
+          </motion.g>
+          
+          {/* Robot head/body */}
+          <rect x="15" y="20" width="70" height="70" rx="20" fill="url(#robotGradient)" />
+          
+          {/* Face screen */}
+          <rect x="22" y="28" width="56" height="50" rx="12" fill="rgba(255,255,255,0.15)" />
+          
+          {/* Left eye */}
+          <motion.g
+            animate={animate ? { scaleY: [1, 0.1, 1] } : {}}
+            transition={{ duration: 0.2, repeat: Infinity, repeatDelay: 3 }}
+            style={{ transformOrigin: '35px 48px' }}
+          >
+            <ellipse cx="35" cy="48" rx="10" ry="10" fill="white" />
+            <circle cx="37" cy="48" r="5" fill="#1E1B4B" />
+            <circle cx="39" cy="46" r="2" fill="white" />
+          </motion.g>
+          
+          {/* Right eye */}
+          <motion.g
+            animate={animate ? { scaleY: [1, 0.1, 1] } : {}}
+            transition={{ duration: 0.2, repeat: Infinity, repeatDelay: 3 }}
+            style={{ transformOrigin: '65px 48px' }}
+          >
+            <ellipse cx="65" cy="48" rx="10" ry="10" fill="white" />
+            <circle cx="67" cy="48" r="5" fill="#1E1B4B" />
+            <circle cx="69" cy="46" r="2" fill="white" />
+          </motion.g>
+          
+          {/* Smile */}
+          <motion.path
+            d="M 35 68 Q 50 80 65 68"
+            stroke="white"
+            strokeWidth="4"
+            strokeLinecap="round"
+            fill="none"
+            animate={animate ? { d: ["M 35 68 Q 50 80 65 68", "M 35 70 Q 50 78 65 70", "M 35 68 Q 50 80 65 68"] } : {}}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+          
+          {/* Cheeks */}
+          <circle cx="25" cy="58" r="5" fill="#F9A8D4" opacity="0.6" />
+          <circle cx="75" cy="58" r="5" fill="#F9A8D4" opacity="0.6" />
+          
+          {/* Gradient definition */}
+          <defs>
+            <linearGradient id="robotGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#6366F1" />
+              <stop offset="50%" stopColor="#8B5CF6" />
+              <stop offset="100%" stopColor="#A855F7" />
+            </linearGradient>
+          </defs>
+        </svg>
       </motion.div>
     );
   };
