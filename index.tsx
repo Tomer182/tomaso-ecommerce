@@ -694,6 +694,11 @@ const App = () => {
     document.documentElement.lang = lang;
   }, [lang]);
 
+  // Global navigation for accessibility widget
+  useEffect(() => {
+    (window as any).__navigateToAccessibility = () => setView('accessibility');
+  }, []);
+
   const addToRecentlyViewed = (id: string) => {
     setRecentlyViewed(prev => [id, ...prev.filter(i => i !== id)].slice(0, 4));
   };
@@ -1598,7 +1603,25 @@ const App = () => {
             </div>
           </motion.div>
         )}
+
+        {/* ACCESSIBILITY VIEW */}
+        {view === 'accessibility' && (
+          <AccessibilityPage onBack={navigateToHome} t={t} />
+        )}
+
+        {/* TERMS VIEW */}
+        {view === 'terms' && (
+          <TermsPage onBack={navigateToHome} t={t} />
+        )}
+
+        {/* PRIVACY VIEW */}
+        {view === 'privacy' && (
+          <PrivacyPage onBack={navigateToHome} t={t} />
+        )}
       </AnimatePresence>
+
+      {/* Accessibility Widget */}
+      <AccessibilityWidget lang={lang} t={t} />
 
       {/* Cart Drawer - shows after adding product */}
       <AnimatePresence>
@@ -1652,7 +1675,7 @@ const App = () => {
       {/* Footer */}
       <footer className="bg-white border-t py-16 lg:py-24 px-4 mt-20">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col lg:flex-row justify-between items-center gap-12 mb-16">
+          <div className="flex flex-col lg:flex-row justify-between items-start gap-12 mb-16">
             <div className="text-center lg:text-left">
               <button onClick={() => navigateToHome()} className="text-2xl font-bold tracking-tighter text-shop-primary uppercase mb-6">AUTOPILOT<span className="text-shop-accent italic font-display">COMMERCE</span></button>
               <p className="text-shop-muted max-w-sm text-sm font-medium leading-relaxed mx-auto lg:mx-0">Empowering global tech enthusiasts with precision-engineered hardware logistics.</p>
@@ -1674,13 +1697,21 @@ const App = () => {
                   ))}
                 </ul>
               </div>
+              <div className="text-center lg:text-left">
+                <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] mb-6 text-shop-primary">Legal</h4>
+                <ul className="space-y-4">
+                  <li><button onClick={() => setView('terms')} className="text-xs font-bold uppercase tracking-widest text-shop-muted hover:text-shop-accent transition-colors">Terms of Service</button></li>
+                  <li><button onClick={() => setView('privacy')} className="text-xs font-bold uppercase tracking-widest text-shop-muted hover:text-shop-accent transition-colors">Privacy Policy</button></li>
+                  <li><button onClick={() => setView('accessibility')} className="text-xs font-bold uppercase tracking-widest text-shop-muted hover:text-shop-accent transition-colors flex items-center gap-2"><Accessibility size={12} /> Accessibility</button></li>
+                </ul>
+              </div>
             </div>
           </div>
           <div className="pt-12 border-t border-shop-border flex flex-col md:flex-row justify-between items-center gap-8 text-[10px] font-bold text-shop-muted uppercase tracking-[0.5em]">
-            <p>© 2026 AUTOPILOT COMMERCE. GLOBAL LOGISTICS NODES ACTIVE.</p>
+            <p>© {new Date().getFullYear()} AUTOPILOT COMMERCE. GLOBAL LOGISTICS NODES ACTIVE.</p>
             <div className="flex gap-10">
-              <button className="hover:text-shop-primary transition-colors">Security</button>
-              <button className="hover:text-shop-primary transition-colors">Protocol</button>
+              <button onClick={() => setView('privacy')} className="hover:text-shop-primary transition-colors">Privacy</button>
+              <button onClick={() => setView('terms')} className="hover:text-shop-primary transition-colors">Terms</button>
             </div>
           </div>
         </div>
@@ -2060,22 +2091,22 @@ RULES:
                   >
                     Start chatting ✨
                   </motion.button>
-                  <button 
-                    onClick={() => setPeekState('dismissed')}
+                <button 
+                  onClick={() => setPeekState('dismissed')}
                     className="py-3 px-4 rounded-xl font-medium text-sm text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
-                  >
+                >
                     Later
-                  </button>
-                </div>
+                </button>
               </div>
+            </div>
               
               {/* Close button */}
-              <button 
+            <button 
                 onClick={(e) => { e.stopPropagation(); setPeekState('dismissed'); }} 
                 className="absolute top-3 right-3 p-1.5 bg-white/20 rounded-full text-white/80 hover:text-white hover:bg-white/30 transition-all"
-              >
+            >
                 <X size={14}/>
-              </button>
+            </button>
             </motion.div>
 
             {/* Robot mascot button */}
@@ -2123,16 +2154,16 @@ RULES:
           <div className="absolute inset-0 opacity-20">
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
-          </div>
+             </div>
           <div className="flex items-center gap-3 relative z-10">
             <RobotMascot size="sm" animate={false} />
-            <div>
+             <div>
               <h3 className="font-bold text-lg leading-tight">Pilot</h3>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                 <p className="text-xs opacity-80">Your shopping buddy</p>
-              </div>
-            </div>
+             </div>
+          </div>
           </div>
           <div className="flex items-center gap-1 relative z-10">
             <button onClick={() => { setPeekState('dismissed'); setIsOpen(false); }} className="p-2.5 hover:bg-white/20 rounded-xl transition-colors">
@@ -2188,27 +2219,27 @@ RULES:
                     <ChevronRight size={16} className="text-gray-400 group-hover:text-violet-500 group-hover:translate-x-1 transition-all" />
                   </motion.button>
                 ))}
-              </div>
+             </div>
             </div>
              
             {/* Bottom buttons */}
             <div className="flex gap-3">
-              <button 
-                onClick={() => { setMode('voice'); startVoiceInput(); }}
+               <button 
+                 onClick={() => { setMode('voice'); startVoiceInput(); }}
                 className="flex-1 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-gray-700 hover:border-violet-400 hover:bg-violet-50 transition-all"
-              >
+               >
                 <Mic size={18} /> Voice
-              </button>
-              <button 
-                onClick={() => setMode('chat')}
+               </button>
+               <button 
+                 onClick={() => setMode('chat')}
                 className="flex-1 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 text-white transition-all"
                 style={{
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 }}
-              >
+               >
                 <MessageCircle size={18} /> Chat
-              </button>
-            </div>
+               </button>
+             </div>
           </div>
         )}
 
@@ -2226,7 +2257,7 @@ RULES:
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-gray-100">
                     <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                     <span className="text-sm text-gray-500 font-medium">Pilot is ready to help!</span>
-                  </div>
+                 </div>
                 </motion.div>
               )}
               
@@ -2271,7 +2302,7 @@ RULES:
                     }}
                   >
                     <Sparkles size={14} className="text-white"/>
-                  </div>
+                </div>
                   <div className="bg-white px-5 py-4 rounded-2xl rounded-tl-md shadow-sm border border-gray-100">
                     <div className="flex gap-1">
                       {[0, 1, 2].map(i => (
@@ -2295,20 +2326,20 @@ RULES:
                   className="flex justify-center py-4"
                 >
                   <div className="flex items-center gap-3 bg-white px-6 py-4 rounded-2xl shadow-lg border border-gray-100">
-                    <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1">
                       {[1,2,3,4,5].map(i => (
-                        <motion.div 
-                          key={i}
+                       <motion.div 
+                         key={i}
                           animate={{ height: [8, 24, 8] }}
                           transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.1 }}
                           className={`w-1 rounded-full ${isSpeaking ? 'bg-purple-500' : 'bg-violet-500'}`}
-                        />
-                      ))}
-                    </div>
+                       />
+                    ))}
+                  </div>
                     <span className="text-sm font-medium text-gray-600">
                       {isSpeaking ? '🔊 Speaking...' : '🎤 Listening...'}
-                    </span>
-                  </div>
+                  </span>
+                </div>
                 </motion.div>
               )}
               <div ref={messagesEndRef} />
@@ -2316,34 +2347,34 @@ RULES:
 
             {/* Input Area - Modern design */}
             <div className="p-4 bg-white border-t border-gray-100">
-              <form 
+               <form 
                 onSubmit={(e) => { e.preventDefault(); handleSendMessage(inputValue); }}
                 className="flex items-center gap-2"
-              >
-                <button 
-                  type="button"
-                  onClick={() => { setMode('voice'); startVoiceInput(); }}
+               >
+                 <button 
+                   type="button"
+                   onClick={() => { setMode('voice'); startVoiceInput(); }}
                   className={`p-3.5 rounded-xl transition-all shrink-0 ${
                     mode === 'voice' || isListening
                       ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg' 
                       : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                   }`}
-                >
-                  <Mic size={20} />
-                </button>
+                 >
+                   <Mic size={20} />
+                 </button>
                 <div className="flex-1 relative">
-                  <input 
+                 <input 
                     ref={inputRef}
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
+                   value={inputValue}
+                   onChange={(e) => setInputValue(e.target.value)}
                     placeholder="Ask me anything..."
                     className="w-full bg-gray-100 py-3.5 px-4 rounded-xl outline-none focus:ring-2 focus:ring-violet-200 focus:bg-white transition-all text-sm placeholder:text-gray-400"
                     style={{ color: '#1f2937' }}
-                    onFocus={() => setMode('chat')}
-                  />
+                   onFocus={() => setMode('chat')}
+                 />
                 </div>
                 <motion.button 
-                  type="submit"
+                   type="submit"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className={`p-3.5 rounded-xl text-white transition-all shrink-0 ${
@@ -2356,10 +2387,10 @@ RULES:
                       ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                       : '#d1d5db',
                   }}
-                >
-                  <Send size={18} className={LANGUAGES[lang].dir === 'rtl' ? 'rotate-180' : ''}/>
+                 >
+                   <Send size={18} className={LANGUAGES[lang].dir === 'rtl' ? 'rotate-180' : ''}/>
                 </motion.button>
-              </form>
+               </form>
             </div>
           </>
         )}
@@ -2409,6 +2440,321 @@ const QuickViewModal = ({ product, isOpen, onClose, onAddToCart, t }: any) => {
     </AnimatePresence>
   );
 };
+
+// --- Accessibility Widget ---
+interface AccessibilitySettings {
+  fontSize: number;
+  highContrast: boolean;
+  highlightLinks: boolean;
+  stopAnimations: boolean;
+  readableFont: boolean;
+  grayscale: boolean;
+  bigCursor: boolean;
+}
+
+const defaultAccessibilitySettings: AccessibilitySettings = {
+  fontSize: 0,
+  highContrast: false,
+  highlightLinks: false,
+  stopAnimations: false,
+  readableFont: false,
+  grayscale: false,
+  bigCursor: false,
+};
+
+const AccessibilityWidget = ({ lang, t }: { lang: string, t: (key: string) => string }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [settings, setSettings] = useState<AccessibilitySettings>(defaultAccessibilitySettings);
+  const widgetRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("accessibilitySettings");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setSettings(parsed);
+        applyAccessibilitySettings(parsed);
+      } catch (e) {}
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("accessibilitySettings", JSON.stringify(settings));
+    applyAccessibilitySettings(settings);
+  }, [settings]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (widgetRef.current && !widgetRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
+  const applyAccessibilitySettings = (s: AccessibilitySettings) => {
+    const root = document.documentElement;
+    const body = document.body;
+    root.classList.remove("acc-text-lg", "acc-text-xl");
+    if (s.fontSize === 1) root.classList.add("acc-text-lg");
+    else if (s.fontSize === 2) root.classList.add("acc-text-xl");
+    body.classList.toggle("acc-high-contrast", s.highContrast);
+    body.classList.toggle("acc-highlight-links", s.highlightLinks);
+    body.classList.toggle("acc-stop-animations", s.stopAnimations);
+    body.classList.toggle("acc-readable-font", s.readableFont);
+    body.classList.toggle("acc-grayscale", s.grayscale);
+    body.classList.toggle("acc-big-cursor", s.bigCursor);
+  };
+
+  const resetSettings = () => setSettings(defaultAccessibilitySettings);
+  const toggleSetting = (key: keyof AccessibilitySettings) => {
+    if (key === "fontSize") return;
+    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const AccessToggle = ({ icon, label, desc, active, onClick }: any) => (
+    <button
+      onClick={onClick}
+      className={`w-full text-left p-3 rounded-xl transition-all ${active ? 'bg-violet-100 border-2 border-violet-500' : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100'}`}
+    >
+      <div className="flex items-center gap-3">
+        <div className={active ? "text-violet-600" : "text-gray-400"}>{icon}</div>
+        <div className="flex-1">
+          <div className={`text-sm font-medium ${active ? "text-violet-700" : "text-gray-700"}`}>{label}</div>
+          <div className="text-xs text-gray-400">{desc}</div>
+        </div>
+        <div className={`w-10 h-6 rounded-full transition-colors ${active ? "bg-violet-500" : "bg-gray-200"}`}>
+          <div className={`w-4 h-4 bg-white rounded-full mt-1 transition-transform ${active ? "translate-x-5" : "translate-x-1"}`} />
+        </div>
+      </div>
+    </button>
+  );
+
+  return (
+    <div ref={widgetRef} className={`fixed top-1/2 -translate-y-1/2 z-[200] ${LANGUAGES[lang as keyof typeof LANGUAGES].dir === 'rtl' ? 'left-0' : 'right-0'}`}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`absolute top-1/2 -translate-y-1/2 text-white p-4 transition-all focus:outline-none focus:ring-4 focus:ring-violet-300 ${LANGUAGES[lang as keyof typeof LANGUAGES].dir === 'rtl' ? 'left-0 rounded-r-2xl' : 'right-0 rounded-l-2xl'}`}
+        style={{
+          background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+          boxShadow: '0 4px 20px rgba(99, 102, 241, 0.4), 0 0 0 3px rgba(255,255,255,0.9)',
+        }}
+        aria-label="Accessibility settings"
+      >
+        {isOpen ? <X size={24} /> : <Accessibility size={24} />}
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ x: LANGUAGES[lang as keyof typeof LANGUAGES].dir === 'rtl' ? '-100%' : '100%', opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: LANGUAGES[lang as keyof typeof LANGUAGES].dir === 'rtl' ? '-100%' : '100%', opacity: 0 }}
+            className={`absolute top-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl w-80 overflow-hidden border border-gray-200 ${LANGUAGES[lang as keyof typeof LANGUAGES].dir === 'rtl' ? 'left-14' : 'right-14'}`}
+          >
+            <div className="bg-gradient-to-r from-violet-600 to-purple-600 text-white p-5">
+              <h2 className="font-bold text-lg flex items-center gap-2"><Accessibility size={20} /> Accessibility</h2>
+              <p className="text-violet-100 text-sm mt-1">Customize your experience</p>
+            </div>
+
+            <div className="p-4 space-y-3 max-h-[50vh] overflow-y-auto">
+              {/* Font Size */}
+              <div className="bg-gray-50 rounded-xl p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700 flex items-center gap-2"><Type size={16} /> Text Size</span>
+                  <span className="text-violet-600 text-xs font-medium">{["Normal", "Large", "X-Large"][settings.fontSize]}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setSettings(p => ({...p, fontSize: Math.max(0, p.fontSize - 1)}))} disabled={settings.fontSize === 0} className="flex-1 bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-30 p-2 rounded-lg"><ZoomOut size={18} className="mx-auto text-gray-600" /></button>
+                  <button onClick={() => setSettings(p => ({...p, fontSize: Math.min(2, p.fontSize + 1)}))} disabled={settings.fontSize === 2} className="flex-1 bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-30 p-2 rounded-lg"><ZoomIn size={18} className="mx-auto text-gray-600" /></button>
+                </div>
+              </div>
+
+              <AccessToggle icon={<Contrast size={16} />} label="High Contrast" desc="Stronger colors" active={settings.highContrast} onClick={() => toggleSetting("highContrast")} />
+              <AccessToggle icon={<Link2 size={16} />} label="Highlight Links" desc="Make links visible" active={settings.highlightLinks} onClick={() => toggleSetting("highlightLinks")} />
+              <AccessToggle icon={<Pause size={16} />} label="Stop Animations" desc="Reduce motion" active={settings.stopAnimations} onClick={() => toggleSetting("stopAnimations")} />
+              <AccessToggle icon={<Type size={16} />} label="Readable Font" desc="Dyslexia-friendly" active={settings.readableFont} onClick={() => toggleSetting("readableFont")} />
+              <AccessToggle icon={<Eye size={16} />} label="Grayscale" desc="Remove colors" active={settings.grayscale} onClick={() => toggleSetting("grayscale")} />
+              <AccessToggle icon={<MousePointer2 size={16} />} label="Big Cursor" desc="Larger pointer" active={settings.bigCursor} onClick={() => toggleSetting("bigCursor")} />
+
+              <button onClick={resetSettings} className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 rounded-xl flex items-center justify-center gap-2 font-medium">
+                <RotateCcw size={16} /> Reset All
+              </button>
+            </div>
+
+            <div className="bg-gray-50 border-t p-3 text-center">
+              <a href="#" onClick={(e) => { e.preventDefault(); (window as any).__navigateToAccessibility?.(); setIsOpen(false); }} className="text-violet-600 hover:text-violet-800 text-sm flex items-center justify-center gap-1">
+                <FileText size={14} /> Accessibility Statement
+              </a>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// --- Legal Pages ---
+const AccessibilityPage = ({ onBack, t }: { onBack: () => void, t: (key: string) => string }) => (
+  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-4xl mx-auto px-4 py-20">
+    <button onClick={onBack} className="flex items-center gap-2 text-[10px] font-bold uppercase mb-8 text-shop-muted hover:text-shop-primary transition-colors">
+      <ArrowLeft size={16}/> Back Home
+    </button>
+    
+    <div className="text-center mb-16">
+      <div className="inline-flex items-center justify-center w-20 h-20 bg-violet-100 rounded-full mb-6">
+        <Accessibility size={40} className="text-violet-600" />
+      </div>
+      <h1 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">Accessibility Statement</h1>
+      <p className="text-shop-muted text-lg">Last updated: December 2024</p>
+    </div>
+
+    <div className="space-y-8">
+      <LegalSection title="Our Commitment">
+        <p>Autopilot Commerce is committed to ensuring digital accessibility for people with disabilities. We continually improve the user experience for everyone and apply relevant accessibility standards.</p>
+      </LegalSection>
+
+      <LegalSection title="Accessibility Features">
+        <div className="grid md:grid-cols-2 gap-3">
+          {["Floating accessibility menu", "Text size adjustment", "High contrast mode", "Link highlighting", "Animation controls", "Readable fonts", "Grayscale mode", "Large cursor option", "Full keyboard navigation", "Screen reader support", "Alt text for images", "ARIA landmarks"].map((item, i) => (
+            <div key={i} className="flex items-center gap-2 bg-gray-50 rounded-lg p-3">
+              <CheckCircle2 size={16} className="text-green-600" />
+              <span className="text-sm">{item}</span>
+            </div>
+          ))}
+        </div>
+      </LegalSection>
+
+      <LegalSection title="Standards">
+        <p>This website conforms to WCAG 2.1 Level AA guidelines for web content accessibility.</p>
+      </LegalSection>
+
+      <LegalSection title="Contact Us">
+        <p>If you encounter any accessibility issues, please contact us at:</p>
+        <div className="bg-violet-50 rounded-xl p-6 mt-4">
+          <p className="font-semibold mb-2">Autopilot Commerce</p>
+          <p className="text-gray-600">support@autopilotcommerce.com</p>
+          <p className="text-sm text-gray-400 mt-2">We respond within 48 hours.</p>
+        </div>
+      </LegalSection>
+    </div>
+  </motion.div>
+);
+
+const TermsPage = ({ onBack, t }: { onBack: () => void, t: (key: string) => string }) => (
+  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-4xl mx-auto px-4 py-20">
+    <button onClick={onBack} className="flex items-center gap-2 text-[10px] font-bold uppercase mb-8 text-shop-muted hover:text-shop-primary transition-colors">
+      <ArrowLeft size={16}/> Back Home
+    </button>
+    
+    <div className="text-center mb-16">
+      <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-6">
+        <FileText size={40} className="text-blue-600" />
+      </div>
+      <h1 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">Terms of Service</h1>
+      <p className="text-shop-muted text-lg">Last updated: December 2024</p>
+    </div>
+
+    <div className="space-y-8">
+      <LegalSection title="1. Acceptance of Terms">
+        <p>By accessing and using Autopilot Commerce, you accept and agree to be bound by the terms and conditions of this agreement.</p>
+      </LegalSection>
+
+      <LegalSection title="2. Use of Service">
+        <p>You agree to use the service only for lawful purposes and in accordance with these Terms. You agree not to use the service in any way that violates applicable laws or regulations.</p>
+      </LegalSection>
+
+      <LegalSection title="3. Products & Orders">
+        <p>All products are subject to availability. We reserve the right to limit quantities and refuse orders. Prices are subject to change without notice. Orders are confirmed only upon receipt of payment.</p>
+      </LegalSection>
+
+      <LegalSection title="4. Payment">
+        <p>We accept major credit cards and secure payment methods. All payments are processed securely through our payment partners. Prices are displayed in USD unless otherwise specified.</p>
+      </LegalSection>
+
+      <LegalSection title="5. Shipping & Returns">
+        <p>Free shipping on orders over $500. Delivery times vary by location. Returns accepted within 30 days of delivery for unused items in original packaging. Refunds processed within 5-7 business days.</p>
+      </LegalSection>
+
+      <LegalSection title="6. Intellectual Property">
+        <p>All content, trademarks, and intellectual property on this site are owned by Autopilot Commerce. Unauthorized use is prohibited.</p>
+      </LegalSection>
+
+      <LegalSection title="7. Limitation of Liability">
+        <p>Autopilot Commerce shall not be liable for any indirect, incidental, or consequential damages arising from use of our services.</p>
+      </LegalSection>
+
+      <LegalSection title="8. Contact">
+        <p>For questions about these Terms, contact us at legal@autopilotcommerce.com</p>
+      </LegalSection>
+    </div>
+  </motion.div>
+);
+
+const PrivacyPage = ({ onBack, t }: { onBack: () => void, t: (key: string) => string }) => (
+  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-4xl mx-auto px-4 py-20">
+    <button onClick={onBack} className="flex items-center gap-2 text-[10px] font-bold uppercase mb-8 text-shop-muted hover:text-shop-primary transition-colors">
+      <ArrowLeft size={16}/> Back Home
+    </button>
+    
+    <div className="text-center mb-16">
+      <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6">
+        <Shield size={40} className="text-green-600" />
+      </div>
+      <h1 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">Privacy Policy</h1>
+      <p className="text-shop-muted text-lg">Last updated: December 2024</p>
+    </div>
+
+    <div className="space-y-8">
+      <LegalSection title="Information We Collect">
+        <p>We collect information you provide directly: name, email, shipping address, and payment details when making a purchase. We also collect usage data including browsing behavior, device information, and cookies.</p>
+      </LegalSection>
+
+      <LegalSection title="How We Use Your Information">
+        <ul className="list-disc list-inside space-y-2 text-gray-600">
+          <li>Process and fulfill orders</li>
+          <li>Send order confirmations and shipping updates</li>
+          <li>Improve our products and services</li>
+          <li>Personalize your shopping experience</li>
+          <li>Send marketing communications (with consent)</li>
+          <li>Prevent fraud and ensure security</li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection title="Data Security">
+        <p>We implement industry-standard security measures including SSL encryption, secure payment processing, and regular security audits to protect your data.</p>
+      </LegalSection>
+
+      <LegalSection title="Cookies">
+        <p>We use cookies to enhance your experience, analyze traffic, and personalize content. You can manage cookie preferences in your browser settings.</p>
+      </LegalSection>
+
+      <LegalSection title="Third-Party Services">
+        <p>We share data with trusted partners for payment processing, shipping, and analytics. These partners are bound by confidentiality agreements.</p>
+      </LegalSection>
+
+      <LegalSection title="Your Rights">
+        <p>You have the right to access, correct, or delete your personal data. Contact us at privacy@autopilotcommerce.com to exercise these rights.</p>
+      </LegalSection>
+
+      <LegalSection title="Data Retention">
+        <p>We retain your data for as long as necessary to provide services and comply with legal obligations. You may request deletion at any time.</p>
+      </LegalSection>
+
+      <LegalSection title="Contact">
+        <p>For privacy-related inquiries, contact our Data Protection Officer at privacy@autopilotcommerce.com</p>
+      </LegalSection>
+    </div>
+  </motion.div>
+);
+
+const LegalSection = ({ title, children }: { title: string, children: React.ReactNode }) => (
+  <section className="bg-white border border-gray-200 rounded-2xl p-6 md:p-8 shadow-sm">
+    <h2 className="text-xl font-bold text-gray-800 mb-4 pb-4 border-b border-gray-100">{title}</h2>
+    <div className="text-gray-600 leading-relaxed space-y-3">{children}</div>
+  </section>
+);
 
 const root = createRoot(document.getElementById('root')!);
 root.render(<App />);
