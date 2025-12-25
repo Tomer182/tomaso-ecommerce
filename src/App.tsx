@@ -735,9 +735,41 @@ export const App = () => {
               AUTOPILOT<span className="text-shop-accent italic font-display">COMMERCE</span>
             </button>
             
-            <nav className="hidden lg:flex gap-8">
-              <button onClick={() => navigateToHome()} className={`text-xs font-bold uppercase tracking-widest transition-colors hover:text-shop-primary ${view === 'home' ? 'text-shop-accent' : 'text-shop-muted'}`}>Home</button>
-              <button onClick={() => navigateToShop('All')} className={`text-xs font-bold uppercase tracking-widest transition-colors hover:text-shop-primary ${view === 'shop' ? 'text-shop-accent' : 'text-shop-muted'}`}>Shop</button>
+            <nav className="hidden lg:flex items-center gap-8">
+              <button 
+                onClick={() => navigateToHome()} 
+                className={`relative text-[11px] font-bold uppercase tracking-[0.15em] py-2 transition-colors ${view === 'home' ? 'text-shop-primary' : 'text-shop-text-secondary hover:text-shop-primary'}`}
+              >
+                Home
+                <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-shop-primary transition-all duration-300 ${view === 'home' ? 'w-full' : 'w-0'}`}></span>
+              </button>
+              <button 
+                onClick={() => navigateToShop('All')} 
+                className={`relative text-[11px] font-bold uppercase tracking-[0.15em] py-2 transition-colors ${view === 'shop' && activeCategory === 'All' ? 'text-shop-primary' : 'text-shop-text-secondary hover:text-shop-primary'}`}
+              >
+                Shop
+                <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-shop-primary transition-all duration-300 ${view === 'shop' && activeCategory === 'All' ? 'w-full' : 'w-0'}`}></span>
+              </button>
+              <button 
+                onClick={() => navigateToShop('Smart Gadgets')} 
+                className={`relative text-[11px] font-bold uppercase tracking-[0.15em] py-2 transition-colors ${view === 'shop' && activeCategory === 'Smart Gadgets' ? 'text-shop-primary' : 'text-shop-text-secondary hover:text-shop-primary'}`}
+              >
+                New Arrivals
+                <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-shop-primary transition-all duration-300 ${view === 'shop' && activeCategory === 'Smart Gadgets' ? 'w-full' : 'w-0'}`}></span>
+              </button>
+              <button 
+                onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })} 
+                className="relative text-[11px] font-bold uppercase tracking-[0.15em] py-2 text-shop-text-secondary hover:text-shop-primary transition-colors"
+              >
+                About
+              </button>
+              <button 
+                onClick={() => navigateToShop('All')} 
+                className="relative text-[11px] font-black uppercase tracking-[0.15em] text-shop-sale hover:text-[#B91C1C] transition-colors flex items-center gap-1.5"
+              >
+                <Tag size={12} className="fill-shop-sale/20" />
+                Sale
+              </button>
             </nav>
 
             <div className="hidden md:flex flex-1 max-w-xl mx-auto relative group">

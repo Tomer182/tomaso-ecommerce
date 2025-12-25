@@ -250,9 +250,24 @@ const IMPULSE_ITEMS: Product[] = [
 
 // --- AI Service ---
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Safely initialize AI - don't crash if no API key
+const apiKey = typeof process !== 'undefined' && process.env?.API_KEY ? process.env.API_KEY : '';
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 const getSmartSearchResults = async (query: string, products: Product[], lang: string) => {
+  // Fallback search if no AI available
+  if (!ai) {
+    const lowerQuery = query.toLowerCase();
+    const matchedIds = products
+      .filter(p => 
+        p.name.toLowerCase().includes(lowerQuery) ||
+        p.description.toLowerCase().includes(lowerQuery) ||
+        p.category.toLowerCase().includes(lowerQuery)
+      )
+      .map(p => p.id);
+    return { ids: matchedIds.length > 0 ? matchedIds : products.slice(0, 4).map(p => p.id), reason: "Text search" };
+  }
+  
   try {
     const langName = LANGUAGES[lang as keyof typeof LANGUAGES].name;
     const response = await ai.models.generateContent({
@@ -275,6 +290,7 @@ Return JSON: { "ids": ["id1", "id2"], "reason": "Short explanation in ${langName
 };
 
 const getAIVoiceFeedback = async (text: string, lang: string) => {
+  if (!ai) return null;
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
@@ -1613,6 +1629,10 @@ const AIAssistant = ({ products, onAddToCart, currentView, navigateToProduct, la
   // Initialize Chat Session with Dynamic Language
   useEffect(() => {
     const initChat = async () => {
+      if (!ai) {
+        setChatSession(null);
+        return;
+      }
       const langName = LANGUAGES[lang as keyof typeof LANGUAGES].name;
       const session = ai.chats.create({
         model: 'gemini-3-flash-preview',
