@@ -806,7 +806,7 @@ const App = () => {
             </button>
             
             {/* Desktop Navigation */}
-            <nav className="hidden xl:flex items-center gap-8">
+            <nav className="hidden lg:flex items-center gap-8">
               {[
                 { label: t('home'), action: () => navigateToHome(), active: view === 'home' },
                 { label: t('shop'), action: () => navigateToShop('All'), active: view === 'shop' && activeCategory === 'All' },
@@ -1621,9 +1621,11 @@ const AIAssistant = ({ products, onAddToCart, currentView, navigateToProduct, la
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [peekState, setPeekState] = useState<'hidden' | 'visible' | 'dismissed'>('hidden');
   const [chatSession, setChatSession] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [hasInteracted, setHasInteracted] = useState(false);
 
   // Initialize Chat Session with Dynamic Language
@@ -1654,7 +1656,6 @@ Rules:
         }
       });
       setChatSession(session);
-      // Reset messages on language change
       setMessages([]);
       setMode('initial');
     };
@@ -1669,35 +1670,45 @@ Rules:
     return () => clearTimeout(timer);
   }, [peekState]);
 
-  // Proactive Triggers (Simplified for lang)
-  useEffect(() => {
-    if (!hasInteracted && peekState === 'visible') {
-      // Logic for proactive messages could go here
-    }
-  }, [currentView, hasInteracted, peekState]);
-
   // Scroll to bottom of chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Focus input when chat opens
+  useEffect(() => {
+    if (isOpen && mode === 'chat') {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [isOpen, mode]);
+
   const handleSendMessage = async (text: string) => {
-    if (!text.trim() || !chatSession) return;
+    if (!text.trim()) return;
 
     // Add user message
-    const newMessages = [...messages, { role: 'user', text }];
-    setMessages(newMessages);
+    setMessages(prev => [...prev, { role: 'user', text }]);
     setInputValue('');
     setHasInteracted(true);
+    setIsTyping(true);
+
+    // If no AI, use fallback response
+    if (!chatSession) {
+      setTimeout(() => {
+        setIsTyping(false);
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          text: `I found some great options for you! Check out our **Levitating Plant Pot** or **Premium Smart Mug** - both are popular choices. 🎁` 
+        }]);
+      }, 1000);
+      return;
+    }
 
     try {
-      // Get AI response
       const result = await chatSession.sendMessage({ message: text });
       const responseText = result.text;
-      
+      setIsTyping(false);
       setMessages(prev => [...prev, { role: 'assistant', text: responseText }]);
 
-      // If in voice mode, speak it
       if (mode === 'voice') {
         const audioData = await getAIVoiceFeedback(responseText, lang);
         if (audioData) {
@@ -1708,7 +1719,8 @@ Rules:
       }
     } catch (error) {
       console.error("Chat error:", error);
-      setMessages(prev => [...prev, { role: 'assistant', text: "Connection interrupted. Please retry coordinates." }]);
+      setIsTyping(false);
+      setMessages(prev => [...prev, { role: 'assistant', text: "Oops! Let me try that again. What were you looking for? 🔄" }]);
     }
   };
 
@@ -1716,7 +1728,7 @@ Rules:
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
-      recognition.lang = lang === 'he' ? 'he-IL' : lang === 'ru' ? 'ru-RU' : 'en-US'; // Basic map
+      recognition.lang = lang === 'he' ? 'he-IL' : lang === 'ru' ? 'ru-RU' : 'en-US';
       recognition.continuous = false;
       
       recognition.onstart = () => setIsListening(true);
@@ -1735,18 +1747,38 @@ Rules:
     }
   };
 
-  // Render logic
+  const quickActions = [
+    { label: "🎁 Gift ideas", query: "I need a gift" },
+    { label: "⭐ Best sellers", query: "Show me best sellers" },
+    { label: "💡 Smart home", query: "Smart gadgets for my home" },
+  ];
+
+  // Collapsed floating button
   if (peekState === 'dismissed' && !isOpen) {
     return (
-      <button 
+      <motion.button 
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-24 lg:bottom-8 z-[100] w-14 h-14 bg-shop-primary rounded-full flex items-center justify-center text-white shadow-xl hover:scale-110 transition-all border-4 border-white ${LANGUAGES[lang].dir === 'rtl' ? 'left-6' : 'right-6'}`}
+        className={`fixed bottom-24 lg:bottom-8 z-[100] w-16 h-16 rounded-full flex items-center justify-center shadow-2xl ${LANGUAGES[lang].dir === 'rtl' ? 'left-6' : 'right-6'}`}
+        style={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        }}
       >
-        <Sparkles size={24} />
-      </button>
+        <motion.div
+          animate={{ rotate: [0, 10, -10, 0] }}
+          transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+        >
+          <Sparkles size={28} className="text-white" />
+        </motion.div>
+        <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse" />
+      </motion.button>
     );
   }
 
+  // Peek bubble
   if (!isOpen) {
     return (
       <AnimatePresence>
@@ -1755,174 +1787,324 @@ Rules:
             initial={{ opacity: 0, y: 50, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.8 }}
-            className={`fixed bottom-24 lg:bottom-8 z-[100] flex flex-col gap-4 ${LANGUAGES[lang].dir === 'rtl' ? 'items-start left-6' : 'items-end right-6'}`}
+            className={`fixed bottom-24 lg:bottom-8 z-[100] flex flex-col gap-3 ${LANGUAGES[lang].dir === 'rtl' ? 'items-start left-6' : 'items-end right-6'}`}
           >
-            <div className={`bg-white px-5 py-4 rounded-2xl shadow-xl border border-shop-border max-w-[250px] relative ${LANGUAGES[lang].dir === 'rtl' ? 'rounded-tl-sm' : 'rounded-tr-sm'}`}>
+            {/* Greeting bubble */}
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+              className={`relative bg-gradient-to-br from-white to-gray-50 px-5 py-4 rounded-2xl shadow-2xl border border-gray-100 max-w-[280px] ${LANGUAGES[lang].dir === 'rtl' ? 'rounded-bl-sm' : 'rounded-br-sm'}`}
+            >
               <button 
                 onClick={(e) => { e.stopPropagation(); setPeekState('dismissed'); }} 
-                className={`absolute -top-2 bg-shop-bg p-1 rounded-full text-shop-muted hover:text-shop-primary shadow-sm ${LANGUAGES[lang].dir === 'rtl' ? '-right-2' : '-left-2'}`}
+                className="absolute -top-2 -right-2 bg-gray-100 p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-all shadow-sm"
               >
                 <X size={12}/>
               </button>
-              <p className="text-sm font-medium text-shop-primary">{t('pilotGreeting')}</p>
-              <div className="flex gap-2 mt-3">
-                <button 
-                  onClick={() => { setIsOpen(true); setMode('initial'); }}
-                  className="bg-shop-primary text-white text-xs font-bold px-3 py-2 rounded-lg hover:bg-shop-secondary transition-colors"
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0">
+                  <Sparkles size={18} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">Hey! 👋 Need help finding something?</p>
+                  <p className="text-xs text-gray-500 mt-1">I can help you discover the perfect product</p>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <motion.button 
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => { setIsOpen(true); setMode('chat'); }}
+                  className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:shadow-lg transition-all"
                 >
-                  {t('pilotYes')}
-                </button>
+                  Let's chat! ✨
+                </motion.button>
                 <button 
                   onClick={() => setPeekState('dismissed')}
-                  className="bg-shop-bg text-shop-muted text-xs font-bold px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2.5 text-gray-400 text-sm font-medium hover:text-gray-600 transition-colors"
                 >
-                  {t('pilotNo')}
+                  Later
                 </button>
               </div>
-            </div>
-            <button 
-              onClick={() => setIsOpen(true)}
-              className="w-16 h-16 premium-gradient rounded-full flex items-center justify-center text-white shadow-2xl hover:scale-105 active:scale-95 transition-all border-4 border-white relative overflow-hidden"
+            </motion.div>
+
+            {/* Floating avatar button */}
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => { setIsOpen(true); setMode('chat'); }}
+              className="relative w-16 h-16 rounded-full shadow-2xl overflow-hidden group"
+              style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              }}
             >
-              <div className="absolute inset-0 bg-shop-accent/20 animate-pulse"></div>
-              <Sparkles size={28} className="relative z-10" />
-            </button>
+              <motion.div
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="absolute inset-0 bg-white/20 rounded-full"
+              />
+              <Sparkles size={28} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white" />
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse" />
+            </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
     );
   }
 
+  // Full chat window
   return (
     <AnimatePresence>
       <motion.div 
-        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+        initial={{ opacity: 0, y: 20, scale: 0.9 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 20, scale: 0.95 }}
-        className={`fixed bottom-24 lg:bottom-8 z-[110] w-[90vw] max-w-[380px] h-[550px] bg-white rounded-[2rem] shadow-2xl border border-shop-border flex flex-col overflow-hidden ring-4 ring-shop-accent/10 ${LANGUAGES[lang].dir === 'rtl' ? 'left-4 lg:left-8' : 'right-4 lg:right-8'}`}
+        exit={{ opacity: 0, y: 20, scale: 0.9 }}
+        className={`fixed bottom-24 lg:bottom-8 z-[110] w-[92vw] max-w-[400px] h-[600px] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden ${LANGUAGES[lang].dir === 'rtl' ? 'left-4 lg:left-8' : 'right-4 lg:right-8'}`}
+        style={{
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+        }}
         dir={LANGUAGES[lang].dir}
       >
-        {/* Header */}
-        <div className="premium-gradient p-5 flex items-center justify-between text-white shrink-0">
-          <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md">
-               <Sparkles size={20} className="text-shop-accent" />
-             </div>
-             <div>
-               <h3 className="font-bold text-lg leading-none">{t('pilotTitle')}</h3>
-               <p className="text-[10px] uppercase tracking-widest opacity-70 mt-1">{t('pilotSubtitle')}</p>
-             </div>
+        {/* Header - Modern gradient */}
+        <div 
+          className="p-5 flex items-center justify-between text-white shrink-0 relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          }}
+        >
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => { setPeekState('dismissed'); setIsOpen(false); }} className="p-2 hover:bg-white/10 rounded-full transition-colors"><Minimize2 size={18}/></button>
-            <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X size={18}/></button>
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
+              <Sparkles size={22} className="text-white" />
+            </div>
+            <div>
+              <h3 className="font-bold text-lg leading-tight">Pilot AI</h3>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                <p className="text-xs opacity-80">Online • Ready to help</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 relative z-10">
+            <button onClick={() => { setPeekState('dismissed'); setIsOpen(false); }} className="p-2.5 hover:bg-white/20 rounded-xl transition-colors">
+              <Minimize2 size={18}/>
+            </button>
+            <button onClick={() => setIsOpen(false)} className="p-2.5 hover:bg-white/20 rounded-xl transition-colors">
+              <X size={18}/>
+            </button>
           </div>
         </div>
 
-        {/* Initial Mode Selection */}
+        {/* Initial Mode - Quick start */}
         {mode === 'initial' && (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-shop-bg/50">
-             <div className="w-20 h-20 bg-white rounded-[2rem] shadow-lg flex items-center justify-center mb-6 animate-bounce-slow">
-               <MessageCircle size={40} className="text-shop-accent" />
-             </div>
-             <h3 className="text-xl font-bold mb-2">{t('pilotTitle')}</h3>
-             <p className="text-shop-muted text-sm mb-8">{t('heroSubtitle')}</p>
+          <div className="flex-1 flex flex-col p-6 bg-gradient-to-b from-gray-50 to-white">
+            <div className="flex-1 flex flex-col items-center justify-center text-center">
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200 }}
+                className="w-20 h-20 rounded-3xl flex items-center justify-center mb-6 shadow-xl"
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                }}
+              >
+                <MessageCircle size={36} className="text-white" />
+              </motion.div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">Hi there! 👋</h3>
+              <p className="text-gray-500 mb-8 max-w-[250px]">I'm Pilot, your personal shopping assistant. How can I help?</p>
+              
+              {/* Quick actions */}
+              <div className="w-full space-y-2 mb-6">
+                {quickActions.map((action, i) => (
+                  <motion.button
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 * i }}
+                    onClick={() => { setMode('chat'); handleSendMessage(action.query); }}
+                    className="w-full py-3 px-4 bg-white border border-gray-200 rounded-xl text-left text-sm font-medium text-gray-700 hover:border-violet-300 hover:bg-violet-50 transition-all flex items-center justify-between group"
+                  >
+                    {action.label}
+                    <ChevronRight size={16} className="text-gray-400 group-hover:text-violet-500 group-hover:translate-x-1 transition-all" />
+                  </motion.button>
+                ))}
+              </div>
+            </div>
              
-             <p className="text-xs font-bold uppercase tracking-widest text-shop-primary mb-4">{t('voiceStart')}</p>
-             
-             <div className="flex flex-col gap-3 w-full">
-               <button 
-                 onClick={() => { setMode('voice'); startVoiceInput(); }}
-                 className="btn-cta py-4 w-full flex items-center justify-center gap-2 shadow-lg"
-               >
-                 <Mic size={18} /> Voice Mode
-               </button>
-               <button 
-                 onClick={() => setMode('chat')}
-                 className="bg-white border border-shop-border text-shop-primary font-bold py-4 w-full rounded-xl hover:bg-gray-50 transition-colors"
-               >
-                 {t('typeInstead')}
-               </button>
-             </div>
+            {/* Bottom buttons */}
+            <div className="flex gap-3">
+              <button 
+                onClick={() => { setMode('voice'); startVoiceInput(); }}
+                className="flex-1 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-gray-700 hover:border-violet-400 hover:bg-violet-50 transition-all"
+              >
+                <Mic size={18} /> Voice
+              </button>
+              <button 
+                onClick={() => setMode('chat')}
+                className="flex-1 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 text-white transition-all"
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                }}
+              >
+                <MessageCircle size={18} /> Chat
+              </button>
+            </div>
           </div>
         )}
 
         {/* Chat / Voice Interface */}
         {(mode === 'chat' || mode === 'voice') && (
           <>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-shop-bg/30">
+            {/* Messages area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
               {messages.length === 0 && (
-                 <div className="text-center py-8 opacity-50">
-                    <p className="text-xs font-bold uppercase tracking-widest mb-2">AI Ready</p>
-                 </div>
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center py-6"
+                >
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-gray-100">
+                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    <span className="text-sm text-gray-500 font-medium">Pilot is ready to help!</span>
+                  </div>
+                </motion.div>
               )}
               
               {messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <motion.div 
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
                   {msg.role === 'assistant' && (
-                    <div className={`w-8 h-8 rounded-full bg-shop-primary text-white flex items-center justify-center shrink-0 mt-1 ${LANGUAGES[lang].dir === 'rtl' ? 'ml-2' : 'mr-2'}`}>
-                      <Sparkles size={14}/>
+                    <div 
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-1 ${LANGUAGES[lang].dir === 'rtl' ? 'ml-2' : 'mr-2'}`}
+                      style={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      }}
+                    >
+                      <Sparkles size={14} className="text-white"/>
                     </div>
                   )}
-                  <div className={`max-w-[80%] p-3.5 rounded-2xl text-sm leading-relaxed ${
+                  <div className={`max-w-[80%] p-4 text-sm leading-relaxed ${
                     msg.role === 'user' 
-                      ? `bg-shop-primary text-white ${LANGUAGES[lang].dir === 'rtl' ? 'rounded-tl-none' : 'rounded-tr-none'}`
-                      : `bg-white border border-shop-border text-shop-text shadow-sm ${LANGUAGES[lang].dir === 'rtl' ? 'rounded-tr-none' : 'rounded-tl-none'}`
+                      ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-2xl rounded-br-md shadow-lg'
+                      : 'bg-white text-gray-800 rounded-2xl rounded-tl-md shadow-sm border border-gray-100'
                   }`}>
-                     <div dangerouslySetInnerHTML={{ __html: msg.text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>') }} />
+                    <div dangerouslySetInnerHTML={{ __html: msg.text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-violet-600">$1</strong>') }} />
                   </div>
-                </div>
+                </motion.div>
               ))}
               
-              {/* Loading / Speaking Indicators */}
-              {(isListening || isSpeaking) && (
-                <div className="flex justify-center py-4">
-                  <div className="flex items-center gap-1">
-                    {[1,2,3,4].map(i => (
-                       <motion.div 
-                         key={i}
-                         animate={{ height: [10, 24, 10] }}
-                         transition={{ duration: 1, repeat: Infinity, delay: i * 0.1 }}
-                         className={`w-1 rounded-full ${isSpeaking ? 'bg-shop-sale' : 'bg-shop-accent'}`}
-                       />
-                    ))}
+              {/* Typing indicator */}
+              {isTyping && (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex justify-start"
+                >
+                  <div 
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-1 ${LANGUAGES[lang].dir === 'rtl' ? 'ml-2' : 'mr-2'}`}
+                    style={{
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    }}
+                  >
+                    <Sparkles size={14} className="text-white"/>
                   </div>
-                  <span className="mx-3 text-xs font-bold uppercase tracking-widest text-shop-muted">
-                    {isSpeaking ? 'Speaking...' : 'Listening...'}
-                  </span>
-                </div>
+                  <div className="bg-white px-5 py-4 rounded-2xl rounded-tl-md shadow-sm border border-gray-100">
+                    <div className="flex gap-1">
+                      {[0, 1, 2].map(i => (
+                        <motion.div
+                          key={i}
+                          animate={{ y: [0, -6, 0] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+                          className="w-2 h-2 bg-violet-400 rounded-full"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+              
+              {/* Voice indicators */}
+              {(isListening || isSpeaking) && (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex justify-center py-4"
+                >
+                  <div className="flex items-center gap-3 bg-white px-6 py-4 rounded-2xl shadow-lg border border-gray-100">
+                    <div className="flex items-center gap-1">
+                      {[1,2,3,4,5].map(i => (
+                        <motion.div 
+                          key={i}
+                          animate={{ height: [8, 24, 8] }}
+                          transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.1 }}
+                          className={`w-1 rounded-full ${isSpeaking ? 'bg-purple-500' : 'bg-violet-500'}`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-sm font-medium text-gray-600">
+                      {isSpeaking ? '🔊 Speaking...' : '🎤 Listening...'}
+                    </span>
+                  </div>
+                </motion.div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
-            <div className="p-4 bg-white border-t border-shop-border">
-               <form 
+            {/* Input Area - Modern design */}
+            <div className="p-4 bg-white border-t border-gray-100">
+              <form 
                 onSubmit={(e) => { e.preventDefault(); handleSendMessage(inputValue); }}
-                className="relative flex items-center gap-2"
-               >
-                 <button 
-                   type="button"
-                   onClick={() => { setMode('voice'); startVoiceInput(); }}
-                   className={`p-3 rounded-xl transition-all ${mode === 'voice' ? 'bg-shop-accent text-white shadow-lg' : 'bg-shop-bg text-shop-muted hover:bg-gray-200'}`}
-                 >
-                   <Mic size={20} />
-                 </button>
-                 <input 
-                   value={inputValue}
-                   onChange={(e) => setInputValue(e.target.value)}
-                   placeholder="Ask Pilot..."
-                   className="flex-1 bg-shop-bg border-none py-3 px-4 rounded-xl outline-none focus:ring-2 focus:ring-shop-accent/10 transition-all font-medium text-sm text-shop-text placeholder:text-shop-muted"
-                   onFocus={() => setMode('chat')}
-                 />
-                 <button 
-                   type="submit"
-                   disabled={!inputValue.trim()}
-                   className="p-3 bg-shop-primary text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-shop-secondary transition-colors"
-                 >
-                   <Send size={18} className={LANGUAGES[lang].dir === 'rtl' ? 'rotate-180' : ''}/>
-                 </button>
-               </form>
+                className="flex items-center gap-2"
+              >
+                <button 
+                  type="button"
+                  onClick={() => { setMode('voice'); startVoiceInput(); }}
+                  className={`p-3.5 rounded-xl transition-all shrink-0 ${
+                    mode === 'voice' || isListening
+                      ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg' 
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  }`}
+                >
+                  <Mic size={20} />
+                </button>
+                <div className="flex-1 relative">
+                  <input 
+                    ref={inputRef}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    placeholder="Ask me anything..."
+                    className="w-full bg-gray-100 py-3.5 px-4 rounded-xl outline-none focus:ring-2 focus:ring-violet-200 focus:bg-white transition-all text-sm text-gray-800 placeholder:text-gray-400"
+                    onFocus={() => setMode('chat')}
+                  />
+                </div>
+                <motion.button 
+                  type="submit"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`p-3.5 rounded-xl text-white transition-all shrink-0 ${
+                    inputValue.trim() 
+                      ? 'shadow-lg' 
+                      : 'opacity-50 cursor-not-allowed'
+                  }`}
+                  style={{
+                    background: inputValue.trim() 
+                      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                      : '#d1d5db',
+                  }}
+                >
+                  <Send size={18} className={LANGUAGES[lang].dir === 'rtl' ? 'rotate-180' : ''}/>
+                </motion.button>
+              </form>
             </div>
           </>
         )}
