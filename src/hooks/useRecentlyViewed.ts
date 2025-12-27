@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const RECENTLY_VIEWED_KEY = 'autopilot_recent';
+const RECENTLY_VIEWED_KEY = 'sparkgear_recent';
 const MAX_RECENT_ITEMS = 8;
 
 export const useRecentlyViewed = () => {

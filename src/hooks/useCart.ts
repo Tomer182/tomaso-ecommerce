@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Product, CartItem, PromoCode } from '../types';
 
-const CART_STORAGE_KEY = 'autopilot_cart';
+const CART_STORAGE_KEY = 'sparkgear_cart';
 const FREE_SHIPPING_THRESHOLD = 500;
 const SHIPPING_COST = 15;
 
@@ -76,7 +76,7 @@ export const useCart = () => {
     
     // Valid promo codes
     const validCodes: Record<string, PromoCode> = {
-      'AUTOPILOT15': { code: 'AUTOPILOT15', discount: 0.15, type: 'percentage' },
+      'SPARK15': { code: 'SPARK15', discount: 0.15, type: 'percentage' },
       'WELCOME10': { code: 'WELCOME10', discount: 0.10, type: 'percentage' },
       'PILOT20': { code: 'PILOT20', discount: 0.20, type: 'percentage' },
     };

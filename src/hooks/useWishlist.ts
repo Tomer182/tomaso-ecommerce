@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const WISHLIST_STORAGE_KEY = 'autopilot_wishlist';
+const WISHLIST_STORAGE_KEY = 'sparkgear_wishlist';
 
 export const useWishlist = () => {
   const [wishlist, setWishlist] = useState<string[]>(() => {

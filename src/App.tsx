@@ -185,9 +185,9 @@ const ExitIntentPopup = ({ onClaim }: { onClaim: () => void }) => {
 
   useEffect(() => {
     const handleMouseLeave = (e: MouseEvent) => {
-      if (e.clientY <= 0 && !localStorage.getItem('autopilot_exit_intent')) {
+      if (e.clientY <= 0 && !localStorage.getItem('sparkgear_exit_intent')) {
         setShow(true);
-        localStorage.setItem('autopilot_exit_intent', 'true');
+        localStorage.setItem('sparkgear_exit_intent', 'true');
       }
     };
     document.addEventListener('mouseleave', handleMouseLeave);
@@ -253,7 +253,7 @@ const ExitIntentPopup = ({ onClaim }: { onClaim: () => void }) => {
                 <Check size={32}/>
               </div>
               <h3 className="text-xl font-bold mb-1">Access Granted</h3>
-              <p className="text-shop-text-secondary font-medium mb-6">Your code <span className="font-bold text-shop-primary">AUTOPILOT15</span> is ready.</p>
+              <p className="text-shop-text-secondary font-medium mb-6">Your code <span className="font-bold text-shop-primary">SPARKGEAR15</span> is ready.</p>
               <button onClick={() => setShow(false)} className="w-full btn-secondary py-4 font-bold text-xs uppercase tracking-widest">Return to Mission</button>
             </div>
           )}
@@ -642,8 +642,8 @@ export const App = () => {
     
     const timer = setTimeout(() => setIsGlobalLoading(false), 800);
     
-    if (localStorage.getItem('autopilot_returning_user')) setIsWelcomeVisible(true);
-    localStorage.setItem('autopilot_returning_user', 'true');
+    if (localStorage.getItem('sparkgear_returning_user')) setIsWelcomeVisible(true);
+    localStorage.setItem('sparkgear_returning_user', 'true');
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -720,7 +720,7 @@ export const App = () => {
       {/* Conversion Banner */}
       <div className="bg-shop-primary text-white text-[9px] font-bold uppercase tracking-[0.4em] py-2.5 text-center px-4 relative overflow-hidden hidden lg:block">
         <motion.div animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 3, repeat: Infinity }}>
-          Establishing High-Speed Logistics: Code <span className="text-shop-accent">AUTOPILOT15</span> for 15% Off Your Mission
+          Establishing High-Speed Logistics: Code <span className="text-shop-accent">SPARKGEAR15</span> for 15% Off Your Mission
         </motion.div>
       </div>
 
@@ -732,7 +732,7 @@ export const App = () => {
               onClick={() => navigateToHome()} 
               className="text-xl font-bold tracking-tighter text-shop-primary uppercase transition-transform active:scale-95 shrink-0"
             >
-              AUTOPILOT<span className="text-shop-accent italic font-display">COMMERCE</span>
+              SPARKGEAR<span className="text-shop-accent italic font-display">COMMERCE</span>
             </button>
             
             <nav className="hidden lg:flex items-center gap-8">
@@ -890,7 +890,7 @@ export const App = () => {
                     { icon: Truck, title: "Global Shipping", desc: "Free delivery over $500" },
                     { icon: ShieldCheck, title: "Secure Warranty", desc: "2-year extensive coverage" },
                     { icon: RotateCcw, title: "Easy Returns", desc: "30-day autopilot returns" },
-                    { icon: Award, title: "Top Rated", desc: "Verified by Pilot Network" },
+                    { icon: Award, title: "Top Rated", desc: "Verified by Spark Network" },
                   ].map((item, i) => (
                     <div key={i} className="flex flex-col items-center gap-3">
                       <div className="w-12 h-12 bg-shop-bg rounded-full flex items-center justify-center text-shop-primary"><item.icon size={20}/></div>
@@ -939,7 +939,7 @@ export const App = () => {
               <div className="flex justify-between items-end mb-12">
                 <div>
                   <h2 className="text-3xl font-bold tracking-tighter mb-2 uppercase">Elite Hardware</h2>
-                  <p className="text-shop-muted text-sm font-medium">Top rated units by the pilot network.</p>
+                  <p className="text-shop-muted text-sm font-medium">Top rated units by the Spark community.</p>
                 </div>
                 <button onClick={() => navigateToShop('All')} className="text-xs font-bold uppercase tracking-widest border-b border-shop-border pb-1 hover:text-shop-accent hover:border-shop-accent transition-all">View All</button>
               </div>
@@ -1317,7 +1317,7 @@ export const App = () => {
       </AnimatePresence>
 
       <SocialProof />
-      <ExitIntentPopup onClaim={() => applyPromoCode('AUTOPILOT15')} />
+      <ExitIntentPopup onClaim={() => applyPromoCode('SPARKGEAR15')} />
       <AIAssistant 
         products={INITIAL_PRODUCTS} 
         onAddToCart={addToCart} 
@@ -1331,7 +1331,7 @@ export const App = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-12 mb-16">
             <div className="text-center lg:text-left">
-              <button onClick={() => navigateToHome()} className="text-2xl font-bold tracking-tighter text-shop-primary uppercase mb-6">AUTOPILOT<span className="text-shop-accent italic font-display">COMMERCE</span></button>
+              <button onClick={() => navigateToHome()} className="text-2xl font-bold tracking-tighter text-shop-primary uppercase mb-6">SPARKGEAR<span className="text-shop-accent italic font-display">COMMERCE</span></button>
               <p className="text-shop-muted max-w-sm text-sm font-medium leading-relaxed mx-auto lg:mx-0">Empowering global tech enthusiasts with precision-engineered hardware logistics.</p>
             </div>
             <div className="flex flex-wrap justify-center gap-8 lg:gap-16">
@@ -1354,7 +1354,7 @@ export const App = () => {
             </div>
           </div>
           <div className="pt-12 border-t border-shop-border flex flex-col md:flex-row justify-between items-center gap-8 text-[10px] font-bold text-shop-muted uppercase tracking-[0.5em]">
-            <p>© 2026 AUTOPILOT COMMERCE. GLOBAL LOGISTICS NODES ACTIVE.</p>
+            <p>© 2026 SPARKGEAR COMMERCE. GLOBAL LOGISTICS NODES ACTIVE.</p>
             <div className="flex gap-10">
               <button className="hover:text-shop-primary transition-colors">Security</button>
               <button className="hover:text-shop-primary transition-colors">Protocol</button>

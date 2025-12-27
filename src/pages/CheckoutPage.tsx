@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   ArrowLeft, 
@@ -14,8 +14,8 @@ import {
   Package
 } from 'lucide-react';
 import { CartItem, ShippingAddress, Order } from '../types';
-import { createPaymentIntent, formatAmountForStripe } from '../lib/stripe';
 import { createOrder } from '../lib/supabase';
+import { StripePaymentForm } from '../components/StripePaymentForm';
 
 interface CheckoutPageProps {
   cart: CartItem[];
@@ -50,7 +50,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   onSuccess,
   clearCart,
 }) => {
-  const [step, setStep] = useState<'shipping' | 'payment' | 'review'>('shipping');
+  const [step, setStep] = useState<'shipping' | 'payment'>('shipping');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -69,17 +69,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   });
 
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal' | 'applepay'>('card');
-  const [cardData, setCardData] = useState({
-    number: '',
-    expiry: '',
-    cvc: '',
-    name: '',
-  });
-
   const [saveInfo, setSaveInfo] = useState(true);
   const [acceptTerms, setAcceptTerms] = useState(false);
-
-  // Form validation
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validateShipping = () => {
@@ -99,22 +90,6 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const validatePayment = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (paymentMethod === 'card') {
-      if (!cardData.number.trim()) newErrors.cardNumber = 'Card number is required';
-      if (!cardData.expiry.trim()) newErrors.cardExpiry = 'Expiry date is required';
-      if (!cardData.cvc.trim()) newErrors.cardCvc = 'CVC is required';
-      if (!cardData.name.trim()) newErrors.cardName = 'Name on card is required';
-    }
-    
-    if (!acceptTerms) newErrors.terms = 'You must accept the terms';
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleShippingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateShipping()) {
@@ -123,104 +98,66 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     }
   };
 
-  const handlePaymentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validatePayment()) return;
-    
-    setIsProcessing(true);
-    setError(null);
-    
+  const handlePaymentSuccess = async (paymentIntentId: string) => {
+    if (!acceptTerms) {
+      setError('You must accept the terms and conditions');
+      return;
+    }
+
+    // Create order
+    const order: Order = {
+      id: `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+      items: cart.map(item => ({
+        productId: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.image,
+      })),
+      shipping: shippingData,
+      subtotal,
+      shippingCost: shipping,
+      discount,
+      total,
+      paymentMethod,
+      paymentIntentId,
+      status: 'processing',
+      createdAt: new Date().toISOString(),
+    };
+
+    // Try to save to Supabase (will fail gracefully if not connected)
     try {
-      // Create payment intent (simulated in demo mode)
-      const paymentIntent = await createPaymentIntent({
-        amount: formatAmountForStripe(total),
-        currency: 'usd',
-        metadata: {
-          email: shippingData.email,
-          itemCount: cart.length.toString(),
-        },
+      await createOrder({
+        items: order.items,
+        shipping_address: order.shipping,
+        subtotal: order.subtotal,
+        shipping_cost: order.shippingCost,
+        discount: order.discount,
+        total: order.total,
+        payment_method: order.paymentMethod,
+        payment_intent_id: order.paymentIntentId,
+        status: order.status,
       });
-
-      if (!paymentIntent) {
-        throw new Error('Payment processing failed');
-      }
-
-      // Create order
-      const order: Order = {
-        id: `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-        items: cart.map(item => ({
-          productId: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.image,
-        })),
-        shipping: shippingData,
-        subtotal,
-        shippingCost: shipping,
-        discount,
-        total,
-        paymentMethod,
-        paymentIntentId: paymentIntent.paymentIntentId,
-        status: 'processing',
-        createdAt: new Date().toISOString(),
-      };
-
-      // Try to save to Supabase (will fail gracefully if not connected)
-      try {
-        await createOrder({
-          items: order.items,
-          shipping_address: order.shipping,
-          subtotal: order.subtotal,
-          shipping_cost: order.shippingCost,
-          discount: order.discount,
-          total: order.total,
-          payment_method: order.paymentMethod,
-          payment_intent_id: order.paymentIntentId,
-          status: order.status,
-        });
-      } catch (dbError) {
-        console.log('Order saved locally (DB not connected)');
-      }
-
-      // Save order to localStorage for success page
-      localStorage.setItem('autopilot_last_order', JSON.stringify(order));
-      
-      // Clear cart and redirect to success
-      clearCart();
-      onSuccess(order);
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred during checkout');
-    } finally {
-      setIsProcessing(false);
+    } catch (dbError) {
+      console.log('Order saved locally (DB not connected)');
     }
+
+    // Save order to localStorage for success page
+    localStorage.setItem('sparkgear_last_order', JSON.stringify(order));
+    
+    // Clear cart and redirect to success
+    clearCart();
+    onSuccess(order);
   };
 
-  const formatCardNumber = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    const matches = v.match(/\d{4,16}/g);
-    const match = (matches && matches[0]) || '';
-    const parts = [];
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-    return parts.length ? parts.join(' ') : value;
+  const handlePaymentError = (errorMessage: string) => {
+    setError(errorMessage);
   };
 
-  const formatExpiry = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    if (v.length >= 2) {
-      return v.substring(0, 2) + '/' + v.substring(2, 4);
-    }
-    return v;
-  };
-
-  // Progress indicator
+  // Progress steps
   const steps = [
     { key: 'shipping', label: 'Shipping', icon: Truck },
     { key: 'payment', label: 'Payment', icon: CreditCard },
-    { key: 'review', label: 'Review', icon: Check },
   ];
 
   const currentStepIndex = steps.findIndex(s => s.key === step);
@@ -475,10 +412,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
             {/* Payment Step */}
             {step === 'payment' && (
-              <motion.form 
+              <motion.div 
                 initial={{ opacity: 0, x: 20 }} 
                 animate={{ opacity: 1, x: 0 }}
-                onSubmit={handlePaymentSubmit}
                 className="bg-white rounded-3xl p-8 shadow-sm border border-shop-border"
               >
                 <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
@@ -541,78 +477,49 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   </div>
 
                   {paymentMethod === 'card' && (
-                    <div className="space-y-4 mt-6">
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-widest text-shop-muted mb-2">
-                          Card Number
-                        </label>
-                        <input
-                          type="text"
-                          value={cardData.number}
-                          onChange={(e) => setCardData({ ...cardData, number: formatCardNumber(e.target.value) })}
-                          maxLength={19}
-                          className={`w-full bg-white border rounded-xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-shop-accent/20 focus:border-shop-accent transition-all font-mono ${
-                            errors.cardNumber ? 'border-shop-sale' : 'border-shop-border'
-                          }`}
-                          placeholder="4242 4242 4242 4242"
-                        />
-                        {errors.cardNumber && <p className="text-shop-sale text-xs mt-1">{errors.cardNumber}</p>}
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-bold uppercase tracking-widest text-shop-muted mb-2">
-                            Expiry Date
-                          </label>
-                          <input
-                            type="text"
-                            value={cardData.expiry}
-                            onChange={(e) => setCardData({ ...cardData, expiry: formatExpiry(e.target.value) })}
-                            maxLength={5}
-                            className={`w-full bg-white border rounded-xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-shop-accent/20 focus:border-shop-accent transition-all font-mono ${
-                              errors.cardExpiry ? 'border-shop-sale' : 'border-shop-border'
-                            }`}
-                            placeholder="MM/YY"
-                          />
-                          {errors.cardExpiry && <p className="text-shop-sale text-xs mt-1">{errors.cardExpiry}</p>}
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold uppercase tracking-widest text-shop-muted mb-2">
-                            CVC
-                          </label>
-                          <input
-                            type="text"
-                            value={cardData.cvc}
-                            onChange={(e) => setCardData({ ...cardData, cvc: e.target.value.replace(/\D/g, '').slice(0, 4) })}
-                            maxLength={4}
-                            className={`w-full bg-white border rounded-xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-shop-accent/20 focus:border-shop-accent transition-all font-mono ${
-                              errors.cardCvc ? 'border-shop-sale' : 'border-shop-border'
-                            }`}
-                            placeholder="123"
-                          />
-                          {errors.cardCvc && <p className="text-shop-sale text-xs mt-1">{errors.cardCvc}</p>}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-widest text-shop-muted mb-2">
-                          Name on Card
-                        </label>
-                        <input
-                          type="text"
-                          value={cardData.name}
-                          onChange={(e) => setCardData({ ...cardData, name: e.target.value })}
-                          className={`w-full bg-white border rounded-xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-shop-accent/20 focus:border-shop-accent transition-all ${
-                            errors.cardName ? 'border-shop-sale' : 'border-shop-border'
-                          }`}
-                          placeholder="JOHN DOE"
-                        />
-                        {errors.cardName && <p className="text-shop-sale text-xs mt-1">{errors.cardName}</p>}
-                      </div>
+                    <div className="mt-6">
+                      <StripePaymentForm
+                        total={total}
+                        billingDetails={{
+                          name: `${shippingData.firstName} ${shippingData.lastName}`,
+                          email: shippingData.email,
+                          phone: shippingData.phone,
+                          address: shippingData.address,
+                          city: shippingData.city,
+                          state: shippingData.state,
+                          zipCode: shippingData.zipCode,
+                          country: shippingData.country,
+                        }}
+                        onSuccess={handlePaymentSuccess}
+                        onError={handlePaymentError}
+                        isProcessing={isProcessing}
+                        setIsProcessing={setIsProcessing}
+                      />
                     </div>
                   )}
                 </div>
 
+                {/* Express Payment Submit */}
+                {(paymentMethod === 'paypal' || paymentMethod === 'applepay') && (
+                  <button
+                    type="button"
+                    onClick={() => handlePaymentSuccess(`${paymentMethod}_` + Date.now())}
+                    disabled={isProcessing}
+                    className="w-full btn-cta py-5 text-lg font-bold uppercase tracking-widest flex items-center justify-center gap-3 disabled:opacity-50"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="animate-spin" size={20} />
+                        Processing...
+                      </>
+                    ) : (
+                      <>Pay with {paymentMethod === 'paypal' ? 'PayPal' : 'Apple Pay'}</>
+                    )}
+                  </button>
+                )}
+
                 {/* Terms */}
-                <label className={`flex items-start gap-3 cursor-pointer mb-8 ${errors.terms ? 'text-shop-sale' : ''}`}>
+                <label className={`flex items-start gap-3 cursor-pointer my-6 ${errors.terms ? 'text-shop-sale' : ''}`}>
                   <input
                     type="checkbox"
                     checked={acceptTerms}
@@ -623,7 +530,6 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     I agree to the <button type="button" className="text-shop-accent underline">Terms of Service</button> and <button type="button" className="text-shop-accent underline">Privacy Policy</button>
                   </span>
                 </label>
-                {errors.terms && <p className="text-shop-sale text-xs -mt-6 mb-6">{errors.terms}</p>}
 
                 {/* Error Message */}
                 {error && (
@@ -641,31 +547,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   >
                     <ArrowLeft size={20} />
                   </button>
-                  <button
-                    type="submit"
-                    disabled={isProcessing}
-                    className="flex-1 btn-cta py-5 text-lg font-bold uppercase tracking-widest flex items-center justify-center gap-3 disabled:opacity-50"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="animate-spin" size={20} />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <Lock size={20} />
-                        Complete Order • ${total.toFixed(2)}
-                      </>
-                    )}
-                  </button>
                 </div>
-
-                {/* Security Badge */}
-                <div className="mt-6 flex items-center justify-center gap-2 text-shop-muted text-xs">
-                  <ShieldCheck size={16} />
-                  <span>256-bit SSL encryption • Your data is secure</span>
-                </div>
-              </motion.form>
+              </motion.div>
             )}
           </div>
 
@@ -743,4 +626,3 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     </motion.div>
   );
 };
-

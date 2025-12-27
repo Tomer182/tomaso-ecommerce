@@ -90,11 +90,11 @@ const TRANSLATIONS = {
     explore: 'Explore Collection',
     pilotGreeting: 'Hi! Need help finding something? 👋',
     pilotYes: 'Yes, help me!', pilotNo: 'Maybe later',
-    pilotTitle: 'Pilot AI', pilotSubtitle: 'Personal Shopper',
+    pilotTitle: 'Spark AI', pilotSubtitle: 'Personal Shopper',
     voiceStart: 'Want to talk? It\'s faster! 🎤',
     typeInstead: 'Type Instead', voiceMode: 'Voice Mode',
     shipping: 'Global Shipping', warranty: 'Secure Warranty', returns: 'Easy Returns', rated: 'Top Rated',
-    backToShop: 'Back to Shop', listening: 'Listening...', speaking: 'Speaking...', askPilot: 'Ask Pilot...',
+    backToShop: 'Back to Shop', listening: 'Listening...', speaking: 'Speaking...', askPilot: 'Ask Spark...',
     processing: 'Processing...', viewAll: 'View All', missionSectors: 'Mission Sectors', eliteHardware: 'Elite Hardware'
   },
   he: {
@@ -106,11 +106,11 @@ const TRANSLATIONS = {
     explore: 'גלה את הקולקציה',
     pilotGreeting: 'היי! צריך עזרה במציאת משהו? 👋',
     pilotYes: 'כן, אשמח לעזרה!', pilotNo: 'אולי אחר כך',
-    pilotTitle: 'טייס AI', pilotSubtitle: 'קניין אישי',
+    pilotTitle: 'Spark AI', pilotSubtitle: 'קניין אישי',
     voiceStart: 'רוצה לדבר? זה מהיר יותר! 🎤',
     typeInstead: 'הקלד במקום', voiceMode: 'מצב קולי',
     shipping: 'משלוח גלובלי', warranty: 'אחריות מלאה', returns: 'החזרות קלות', rated: 'דירוג גבוה',
-    backToShop: 'חזרה לחנות', listening: 'מקשיב...', speaking: 'מדבר...', askPilot: 'שאל את הטייס...',
+    backToShop: 'חזרה לחנות', listening: 'מקשיב...', speaking: 'מדבר...', askPilot: 'שאל את Spark...',
     processing: 'מעבד...', viewAll: 'הצג הכל', missionSectors: 'מגזרי המשימה', eliteHardware: 'חומרה מובחרת'
   },
   de: {
@@ -122,11 +122,11 @@ const TRANSLATIONS = {
     explore: 'Kollektion Entdecken',
     pilotGreeting: 'Hallo! Brauchst du Hilfe? 👋',
     pilotYes: 'Ja, hilf mir!', pilotNo: 'Vielleicht später',
-    pilotTitle: 'Pilot AI', pilotSubtitle: 'Personal Shopper',
+    pilotTitle: 'Spark AI', pilotSubtitle: 'Personal Shopper',
     voiceStart: 'Willst du sprechen? Es geht schneller! 🎤',
     typeInstead: 'Tippen stattdessen', voiceMode: 'Sprachmodus',
     shipping: 'Weltweiter Versand', warranty: 'Sichere Garantie', returns: 'Einfache Rückgabe', rated: 'Bestbewertet',
-    backToShop: 'Zurück zum Shop', listening: 'Höre zu...', speaking: 'Spreche...', askPilot: 'Frag Pilot...',
+    backToShop: 'Zurück zum Shop', listening: 'Höre zu...', speaking: 'Spreche...', askPilot: 'Ask Spark...',
     processing: 'Verarbeitung...', viewAll: 'Alle anzeigen', missionSectors: 'Mission Sektoren', eliteHardware: 'Elite Hardware'
   },
   fr: {
@@ -138,11 +138,11 @@ const TRANSLATIONS = {
     explore: 'Explorer la collection',
     pilotGreeting: 'Salut ! Besoin d\'aide ? 👋',
     pilotYes: 'Oui, aidez-moi !', pilotNo: 'Peut-être plus tard',
-    pilotTitle: 'Pilote AI', pilotSubtitle: 'Assistant Personnel',
+    pilotTitle: 'Spark AI', pilotSubtitle: 'Assistant Personnel',
     voiceStart: 'Voulez-vous parler ? C\'est plus rapide ! 🎤',
     typeInstead: 'Écrire à la place', voiceMode: 'Mode vocal',
     shipping: 'Livraison Mondiale', warranty: 'Garantie Sécurisée', returns: 'Retours Faciles', rated: 'Mieux Noté',
-    backToShop: 'Retour boutique', listening: 'Écoute...', speaking: 'Parle...', askPilot: 'Demander au Pilote...',
+    backToShop: 'Retour boutique', listening: 'Écoute...', speaking: 'Parle...', askPilot: 'Ask Spark...',
     processing: 'Traitement...', viewAll: 'Voir tout', missionSectors: 'Secteurs Mission', eliteHardware: 'Hardware Elite'
   },
   ru: {
@@ -522,9 +522,9 @@ const ExitIntentPopup = ({ onClaim }: { onClaim: () => void }) => {
 
   useEffect(() => {
     const handleMouseLeave = (e: MouseEvent) => {
-      if (e.clientY <= 0 && !localStorage.getItem('autopilot_exit_intent')) {
+      if (e.clientY <= 0 && !localStorage.getItem('sparkgear_exit_intent')) {
         setShow(true);
-        localStorage.setItem('autopilot_exit_intent', 'true');
+        localStorage.setItem('sparkgear_exit_intent', 'true');
       }
     };
     document.addEventListener('mouseleave', handleMouseLeave);
@@ -590,7 +590,7 @@ const ExitIntentPopup = ({ onClaim }: { onClaim: () => void }) => {
                 <Check size={32}/>
               </div>
               <h3 className="text-xl font-bold mb-1">Access Granted</h3>
-              <p className="text-shop-text-secondary font-medium mb-6">Your code <span className="font-bold text-shop-primary">AUTOPILOT15</span> is ready.</p>
+              <p className="text-shop-text-secondary font-medium mb-6">Your code <span className="font-bold text-shop-primary">SPARK15</span> is ready.</p>
               <button onClick={() => setShow(false)} className="w-full btn-secondary py-4 font-bold text-xs uppercase tracking-widest">Return to Mission</button>
             </div>
           )}
@@ -631,9 +631,9 @@ const App = () => {
   const [view, setView] = useState<ViewState>('home');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
-  const [cart, setCart] = useState<CartItem[]>(() => JSON.parse(localStorage.getItem('autopilot_cart') || '[]'));
-  const [wishlist, setWishlist] = useState<string[]>(() => JSON.parse(localStorage.getItem('autopilot_wishlist') || '[]'));
-  const [recentlyViewed, setRecentlyViewed] = useState<string[]>(() => JSON.parse(localStorage.getItem('autopilot_recent') || '[]'));
+  const [cart, setCart] = useState<CartItem[]>(() => JSON.parse(localStorage.getItem('sparkgear_cart') || '[]'));
+  const [wishlist, setWishlist] = useState<string[]>(() => JSON.parse(localStorage.getItem('sparkgear_wishlist') || '[]'));
+  const [recentlyViewed, setRecentlyViewed] = useState<string[]>(() => JSON.parse(localStorage.getItem('sparkgear_recent') || '[]'));
   
   const [activeCategory, setActiveCategory] = useState('All');
   const [activeFilter, setActiveFilter] = useState<'all' | 'new' | 'sale'>('all');
@@ -667,9 +667,9 @@ const App = () => {
   const [isAddingToCart, setIsAddingToCart] = useState<string | null>(null);
 
   useEffect(() => {
-    localStorage.setItem('autopilot_cart', JSON.stringify(cart));
-    localStorage.setItem('autopilot_wishlist', JSON.stringify(wishlist));
-    localStorage.setItem('autopilot_recent', JSON.stringify(recentlyViewed));
+    localStorage.setItem('sparkgear_cart', JSON.stringify(cart));
+    localStorage.setItem('sparkgear_wishlist', JSON.stringify(wishlist));
+    localStorage.setItem('sparkgear_recent', JSON.stringify(recentlyViewed));
   }, [cart, wishlist, recentlyViewed]);
 
   useEffect(() => {
@@ -679,8 +679,8 @@ const App = () => {
     // Simulate initial data load for skeleton testing
     const timer = setTimeout(() => setIsGlobalLoading(false), 800);
     
-    if (localStorage.getItem('autopilot_returning_user')) setIsWelcomeVisible(true);
-    localStorage.setItem('autopilot_returning_user', 'true');
+    if (localStorage.getItem('sparkgear_returning_user')) setIsWelcomeVisible(true);
+    localStorage.setItem('sparkgear_returning_user', 'true');
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -809,7 +809,7 @@ const App = () => {
       {/* Conversion Banner */}
       <div className="bg-shop-primary text-white text-[9px] font-bold uppercase tracking-[0.4em] py-2.5 text-center px-4 relative overflow-hidden hidden lg:block">
         <motion.div animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 3, repeat: Infinity }}>
-          Establishing High-Speed Logistics: Code <span className="text-shop-accent">AUTOPILOT15</span> for 15% Off Your Mission
+          Establishing High-Speed Logistics: Code <span className="text-shop-accent">SPARK15</span> for 15% Off Your Mission
         </motion.div>
       </div>
 
@@ -824,7 +824,7 @@ const App = () => {
               className="group flex flex-col leading-none"
             >
               <span className="text-2xl font-black tracking-tighter text-shop-primary uppercase transition-transform group-active:scale-95 flex items-center gap-1">
-                AUTOPILOT <span className="w-2 h-2 bg-shop-sale rounded-full animate-pulse"></span>
+                SPARK<span className="text-shop-accent">GEAR</span> <Sparkles className="w-5 h-5 text-shop-accent animate-pulse" />
               </span>
               <span className="text-[9px] font-bold text-shop-muted tracking-[0.3em] pl-0.5 group-hover:text-shop-accent transition-colors">COMMERCE OS</span>
             </button>
@@ -1056,14 +1056,14 @@ const App = () => {
                          <div className="w-12 h-12 bg-shop-bg rounded-full flex items-center justify-center text-shop-primary"><RotateCcw size={20}/></div>
                          <div>
                             <h4 className="font-bold text-sm uppercase tracking-wide">{t('returns')}</h4>
-                            <p className="text-xs text-shop-muted">30-day autopilot returns</p>
+                            <p className="text-xs text-shop-muted">30-day easy returns</p>
                          </div>
                       </div>
                       <div className="flex flex-col items-center gap-3">
                          <div className="w-12 h-12 bg-shop-bg rounded-full flex items-center justify-center text-shop-primary"><Award size={20}/></div>
                          <div>
                             <h4 className="font-bold text-sm uppercase tracking-wide">{t('rated')}</h4>
-                            <p className="text-xs text-shop-muted">Verified by Pilot Network</p>
+                            <p className="text-xs text-shop-muted">Verified by Spark Network</p>
                          </div>
                       </div>
                    </div>
@@ -1127,7 +1127,7 @@ const App = () => {
                 <div className="flex justify-between items-end mb-12">
                    <div>
                      <h2 className="text-3xl font-bold tracking-tighter mb-2 uppercase">Elite Hardware</h2>
-                     <p className="text-shop-muted text-sm font-medium">Top rated units by the pilot network.</p>
+                     <p className="text-shop-muted text-sm font-medium">Top rated units by the Spark community.</p>
                    </div>
                    <button onClick={() => navigateToShop('All')} className="text-xs font-bold uppercase tracking-widest border-b border-shop-border pb-1 hover:text-shop-accent hover:border-shop-accent transition-all">View All</button>
                 </div>
@@ -1154,7 +1154,7 @@ const App = () => {
                    <div className="grid md:grid-cols-3 gap-8">
                       {[
                         { name: "Alex K.", role: "Architect", text: "The minimal aesthetics fit perfectly with my studio. Shipping was incredibly fast.", rating: 5 },
-                        { name: "Jordan M.", role: "Tech Lead", text: "Autopilot's curation saves me hours of searching. Every product is a hit.", rating: 5 },
+                        { name: "Jordan M.", role: "Tech Lead", text: "SparkGear's curation saves me hours of searching. Every product is a hit.", rating: 5 },
                         { name: "Casey R.", role: "Designer", text: "Premium quality that matches the description exactly. The packaging is an experience itself.", rating: 5 }
                       ].map((review, i) => (
                         <motion.div 
@@ -1183,7 +1183,7 @@ const App = () => {
              <section className="py-24 px-4">
                <div className="max-w-4xl mx-auto bg-shop-primary rounded-[3rem] p-12 text-center text-white relative overflow-hidden">
                   <div className="relative z-10">
-                    <h2 className="text-4xl font-bold tracking-tighter mb-4">JOIN THE PILOT NETWORK</h2>
+                    <h2 className="text-4xl font-bold tracking-tighter mb-4">JOIN THE SPARK NETWORK</h2>
                     <p className="text-blue-100/70 mb-8 max-w-lg mx-auto">Get early access to drops, exclusive coordinates, and logistics updates.</p>
                     <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
                        <input type="email" placeholder="Enter email coordinates" className="flex-1 px-6 py-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/50 outline-none focus:bg-white/20 transition-all" />
@@ -1562,7 +1562,7 @@ const App = () => {
               <div>
                 <h2 className="text-3xl font-bold tracking-tighter uppercase mb-6">Our Mission</h2>
                 <p className="text-shop-text-secondary text-lg leading-relaxed mb-6">
-                  At Autopilot Commerce, we believe that finding the perfect product shouldn't be a chore. Our AI-powered platform curates the finest hardware, smart gadgets, and home decor from around the globe.
+                  At SparkGear, we believe that finding the perfect product shouldn't be a chore. Our AI-powered platform curates the finest hardware, smart gadgets, and home decor from around the globe.
                 </p>
                 <p className="text-shop-text-secondary text-lg leading-relaxed">
                   Every product in our collection is hand-selected for quality, design, and innovation. We partner with manufacturers who share our commitment to excellence.
@@ -1662,7 +1662,7 @@ const App = () => {
       </AnimatePresence>
 
       <SocialProof />
-      <ExitIntentPopup onClaim={() => setAppliedPromo({ code: 'AUTOPILOT15', discount: 0.15 })} />
+      <ExitIntentPopup onClaim={() => setAppliedPromo({ code: 'SPARK15', discount: 0.15 })} />
       <AIAssistant 
         products={INITIAL_PRODUCTS} 
         onAddToCart={addToCart} 
@@ -1677,7 +1677,7 @@ const App = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row justify-between items-start gap-12 mb-16">
             <div className="text-center lg:text-left">
-              <button onClick={() => navigateToHome()} className="text-2xl font-bold tracking-tighter text-shop-primary uppercase mb-6">AUTOPILOT<span className="text-shop-accent italic font-display">COMMERCE</span></button>
+              <button onClick={() => navigateToHome()} className="text-2xl font-bold tracking-tighter text-shop-primary uppercase mb-6">SPARK<span className="text-shop-accent italic font-display">GEAR</span> ✨</button>
               <p className="text-shop-muted max-w-sm text-sm font-medium leading-relaxed mx-auto lg:mx-0">Empowering global tech enthusiasts with precision-engineered hardware logistics.</p>
             </div>
             <div className="flex flex-wrap justify-center gap-8 lg:gap-16">
@@ -1708,7 +1708,7 @@ const App = () => {
             </div>
           </div>
           <div className="pt-12 border-t border-shop-border flex flex-col md:flex-row justify-between items-center gap-8 text-[10px] font-bold text-shop-muted uppercase tracking-[0.5em]">
-            <p>© {new Date().getFullYear()} AUTOPILOT COMMERCE. GLOBAL LOGISTICS NODES ACTIVE.</p>
+            <p>© {new Date().getFullYear()} SPARKGEAR. ALL RIGHTS RESERVED.</p>
             <div className="flex gap-10">
               <button onClick={() => setView('privacy')} className="hover:text-shop-primary transition-colors">Privacy</button>
               <button onClick={() => setView('terms')} className="hover:text-shop-primary transition-colors">Terms</button>
@@ -1797,7 +1797,7 @@ const AIAssistant = ({ products, onAddToCart, currentView, navigateToProduct, la
       const session = ai.chats.create({
         model: 'gemini-3-flash-preview',
         config: {
-          systemInstruction: `You are 'Pilot', a friendly AI shopping assistant for Autopilot Commerce.
+          systemInstruction: `You are 'Spark', a friendly AI shopping assistant for SparkGear.
 
 CRITICAL RULE - ALWAYS ASK BEFORE RECOMMENDING:
 - NEVER recommend products immediately!
@@ -2612,7 +2612,7 @@ const AccessibilityPage = ({ onBack, t }: { onBack: () => void, t: (key: string)
 
     <div className="space-y-8">
       <LegalSection title="Our Commitment">
-        <p>Autopilot Commerce is committed to ensuring digital accessibility for people with disabilities. We continually improve the user experience for everyone and apply relevant accessibility standards.</p>
+        <p>SparkGear is committed to ensuring digital accessibility for people with disabilities. We continually improve the user experience for everyone and apply relevant accessibility standards.</p>
       </LegalSection>
 
       <LegalSection title="Accessibility Features">
@@ -2633,8 +2633,8 @@ const AccessibilityPage = ({ onBack, t }: { onBack: () => void, t: (key: string)
       <LegalSection title="Contact Us">
         <p>If you encounter any accessibility issues, please contact us at:</p>
         <div className="bg-violet-50 rounded-xl p-6 mt-4">
-          <p className="font-semibold mb-2">Autopilot Commerce</p>
-          <p className="text-gray-600">support@autopilotcommerce.com</p>
+          <p className="font-semibold mb-2">SparkGear</p>
+          <p className="text-gray-600">support@sparkgear.shop</p>
           <p className="text-sm text-gray-400 mt-2">We respond within 48 hours.</p>
         </div>
       </LegalSection>
@@ -2658,7 +2658,7 @@ const TermsPage = ({ onBack, t }: { onBack: () => void, t: (key: string) => stri
 
     <div className="space-y-8">
       <LegalSection title="1. Acceptance of Terms">
-        <p>By accessing and using Autopilot Commerce, you accept and agree to be bound by the terms and conditions of this agreement.</p>
+        <p>By accessing and using SparkGear, you accept and agree to be bound by the terms and conditions of this agreement.</p>
       </LegalSection>
 
       <LegalSection title="2. Use of Service">
@@ -2678,15 +2678,15 @@ const TermsPage = ({ onBack, t }: { onBack: () => void, t: (key: string) => stri
       </LegalSection>
 
       <LegalSection title="6. Intellectual Property">
-        <p>All content, trademarks, and intellectual property on this site are owned by Autopilot Commerce. Unauthorized use is prohibited.</p>
+        <p>All content, trademarks, and intellectual property on this site are owned by SparkGear. Unauthorized use is prohibited.</p>
       </LegalSection>
 
       <LegalSection title="7. Limitation of Liability">
-        <p>Autopilot Commerce shall not be liable for any indirect, incidental, or consequential damages arising from use of our services.</p>
+        <p>SparkGear shall not be liable for any indirect, incidental, or consequential damages arising from use of our services.</p>
       </LegalSection>
 
       <LegalSection title="8. Contact">
-        <p>For questions about these Terms, contact us at legal@autopilotcommerce.com</p>
+        <p>For questions about these Terms, contact us at legal@sparkgear.shop</p>
       </LegalSection>
     </div>
   </motion.div>
@@ -2735,7 +2735,7 @@ const PrivacyPage = ({ onBack, t }: { onBack: () => void, t: (key: string) => st
       </LegalSection>
 
       <LegalSection title="Your Rights">
-        <p>You have the right to access, correct, or delete your personal data. Contact us at privacy@autopilotcommerce.com to exercise these rights.</p>
+        <p>You have the right to access, correct, or delete your personal data. Contact us at privacy@sparkgear.shop to exercise these rights.</p>
       </LegalSection>
 
       <LegalSection title="Data Retention">
@@ -2743,7 +2743,7 @@ const PrivacyPage = ({ onBack, t }: { onBack: () => void, t: (key: string) => st
       </LegalSection>
 
       <LegalSection title="Contact">
-        <p>For privacy-related inquiries, contact our Data Protection Officer at privacy@autopilotcommerce.com</p>
+        <p>For privacy-related inquiries, contact our Data Protection Officer at privacy@sparkgear.shop</p>
       </LegalSection>
     </div>
   </motion.div>

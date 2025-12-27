@@ -53,7 +53,7 @@ export const SuccessPage: React.FC<SuccessPageProps> = ({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'My Autopilot Commerce Order',
+          title: 'My SparkGear Order',
           text: `Just ordered some amazing products! Order #${order.id}`,
           url: window.location.href,
         });
