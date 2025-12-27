@@ -15,6 +15,7 @@ import { INITIAL_PRODUCTS, IMPULSE_ITEMS, CATEGORIES } from './data/products';
 import { useCart, useWishlist, useRecentlyViewed } from './hooks';
 import { getSmartSearchResults, createChatSession, getAIVoiceFeedback, playAudioBase64, ai } from './lib/ai';
 import { CheckoutPage, SuccessPage } from './pages';
+import { FiltersPanel, FilterState } from './components';
 
 // --- UI Components ---
 
@@ -629,7 +630,18 @@ export const App = () => {
   const [searchResults, setSearchResults] = useState<{ ids: string[]; reason: string } | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [sortBy, setSortBy] = useState('Featured');
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  
+  // Calculate max price for filters
+  const maxPrice = Math.ceil(Math.max(...INITIAL_PRODUCTS.map(p => p.price), 500) / 50) * 50;
+  
+  const [filters, setFilters] = useState<FilterState>({
+    priceRange: [0, maxPrice],
+    minRating: 0,
+    stockStatus: [],
+    badges: [],
+    sortBy: 'trending',
+  });
   const [isWelcomeVisible, setIsWelcomeVisible] = useState(false);
   const [isGlobalLoading, setIsGlobalLoading] = useState(true);
   const [viewers] = useState(3);
@@ -1011,33 +1023,69 @@ export const App = () => {
                   <h1 className="text-4xl lg:text-6xl font-bold tracking-tighter uppercase">{searchQuery ? `Search: "${searchQuery}"` : activeCategory}</h1>
                   {searchResults && <p className="text-shop-accent font-medium mt-2 flex items-center gap-2"><Sparkles size={16}/> AI Filter Active: {searchResults.reason || "Smart Match"}</p>}
                 </div>
+                {/* Mobile Filter Button */}
+                <button 
+                  onClick={() => setShowMobileFilters(true)}
+                  className="lg:hidden flex items-center gap-2 px-4 py-2.5 bg-white border border-shop-border rounded-xl text-sm font-medium hover:border-shop-accent transition-colors"
+                >
+                  <Filter size={16} />
+                  Filters
+                  {(filters.badges.length > 0 || filters.minRating > 0 || filters.priceRange[0] > 0 || filters.priceRange[1] < maxPrice) && (
+                    <span className="w-5 h-5 bg-shop-accent text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      {filters.badges.length + (filters.minRating > 0 ? 1 : 0) + (filters.priceRange[0] > 0 || filters.priceRange[1] < maxPrice ? 1 : 0)}
+                    </span>
+                  )}
+                </button>
               </div>
 
               <div className="flex flex-col lg:flex-row gap-12">
-                <aside className="hidden lg:block w-64 shrink-0 space-y-10">
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-widest mb-6 border-b pb-2">Categories</h3>
-                    <ul className="space-y-3">
-                      {CATEGORIES.map(cat => (
-                        <li key={cat}>
-                          <button 
-                            onClick={() => { setActiveCategory(cat); setSearchResults(null); setSearchQuery(''); }}
-                            className={`text-sm font-medium transition-colors hover:text-shop-accent ${activeCategory === cat && !searchResults ? 'text-shop-primary font-bold underline decoration-2 decoration-shop-accent underline-offset-4' : 'text-shop-muted'}`}
-                          >
-                            {cat}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-widest mb-6 border-b pb-2">Sort By</h3>
-                    <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="w-full bg-shop-bg border border-shop-border rounded-lg p-2 text-sm font-medium outline-none">
-                      <option>Featured</option>
-                      <option>Price: Low to High</option>
-                      <option>Price: High to Low</option>
-                      <option>Newest</option>
-                    </select>
+                {/* Mobile Filters Drawer */}
+                <div className="lg:hidden">
+                  <FiltersPanel
+                    isOpen={showMobileFilters}
+                    onClose={() => setShowMobileFilters(false)}
+                    filters={filters}
+                    onFiltersChange={setFilters}
+                    maxPrice={maxPrice}
+                    productCount={INITIAL_PRODUCTS.filter(p => {
+                      if (searchResults) return searchResults.ids.includes(p.id);
+                      return activeCategory === 'All' || p.category === activeCategory;
+                    }).length}
+                  />
+                </div>
+
+                {/* Desktop Filters Sidebar */}
+                <aside className="hidden lg:block w-64 shrink-0">
+                  <div className="sticky top-28 bg-white rounded-2xl border border-shop-border p-6 shadow-sm">
+                    {/* Categories */}
+                    <div className="mb-6 pb-6 border-b border-shop-border">
+                      <h3 className="text-xs font-bold uppercase tracking-widest mb-4 text-shop-primary">Categories</h3>
+                      <ul className="space-y-2">
+                        {CATEGORIES.map(cat => (
+                          <li key={cat}>
+                            <button 
+                              onClick={() => { setActiveCategory(cat); setSearchResults(null); setSearchQuery(''); }}
+                              className={`text-sm font-medium transition-colors hover:text-shop-accent ${activeCategory === cat && !searchResults ? 'text-shop-accent font-semibold' : 'text-shop-text-secondary'}`}
+                            >
+                              {cat}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    {/* Filters */}
+                    <FiltersPanel
+                      isOpen={false}
+                      onClose={() => {}}
+                      filters={filters}
+                      onFiltersChange={setFilters}
+                      maxPrice={maxPrice}
+                      productCount={INITIAL_PRODUCTS.filter(p => {
+                        if (searchResults) return searchResults.ids.includes(p.id);
+                        return activeCategory === 'All' || p.category === activeCategory;
+                      }).length}
+                    />
                   </div>
                 </aside>
 
@@ -1060,14 +1108,32 @@ export const App = () => {
                     ) : (
                       INITIAL_PRODUCTS
                         .filter(p => {
+                          // AI Search filter
                           if (searchResults) return searchResults.ids.includes(p.id);
-                          return activeCategory === 'All' || p.category === activeCategory;
+                          // Category filter
+                          if (activeCategory !== 'All' && p.category !== activeCategory) return false;
+                          // Price filter
+                          if (p.price < filters.priceRange[0] || p.price > filters.priceRange[1]) return false;
+                          // Rating filter
+                          if (filters.minRating > 0 && p.rating < filters.minRating) return false;
+                          // Badges filter
+                          if (filters.badges.length > 0 && !filters.badges.some(badge => p[badge])) return false;
+                          // Stock filter
+                          if (filters.stockStatus.length > 0) {
+                            const status = p.stock <= 0 ? 'out_of_stock' : p.stock <= 5 ? 'low_stock' : 'in_stock';
+                            if (!filters.stockStatus.includes(status)) return false;
+                          }
+                          return true;
                         })
                         .sort((a, b) => {
-                          if (sortBy === 'Price: Low to High') return a.price - b.price;
-                          if (sortBy === 'Price: High to Low') return b.price - a.price;
-                          if (sortBy === 'Newest') return (a.isNew === b.isNew) ? 0 : a.isNew ? -1 : 1;
-                          return 0;
+                          switch (filters.sortBy) {
+                            case 'price-low': return a.price - b.price;
+                            case 'price-high': return b.price - a.price;
+                            case 'newest': return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
+                            case 'rating': return b.rating - a.rating;
+                            case 'trending':
+                            default: return (b.trendScore || 0) - (a.trendScore || 0);
+                          }
                         })
                         .map(p => (
                           <ProductCard 

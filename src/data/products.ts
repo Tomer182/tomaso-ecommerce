@@ -1,169 +1,244 @@
 import { Product } from '../types';
+import { getProducts as getSupabaseProducts, getCategories as getSupabaseCategories } from '../lib/supabase';
 
-export const INITIAL_PRODUCTS: Product[] = [
+// Fallback products for when Supabase is unavailable
+export const FALLBACK_PRODUCTS: Product[] = [
   { 
-    id: 'hd-1', 
-    name: 'Minimalist Sculptural Vase', 
-    price: 69.00, 
-    description: 'Hand-finished ceramic vase with a matte tactile finish. Designed for modern architectural spaces, this piece brings an organic touch to any shelving unit or side table.', 
-    category: 'Home Decor', 
-    image: 'https://images.unsplash.com/photo-1581781870027-04212e231e96?auto=format&fit=crop&q=80&w=800',
-    images: [
-      'https://images.unsplash.com/photo-1581781870027-04212e231e96?auto=format&fit=crop&q=80&w=800',
-      'https://images.unsplash.com/photo-1612198188060-c7c2a3b66eae?auto=format&fit=crop&q=80&w=800',
-    ],
-    rating: 4.8, 
-    reviews: 42, 
-    stock: 15, 
-    soldToday: 12, 
-    isBestSeller: true 
-  },
-  { 
-    id: 'hd-2', 
-    name: 'Floating Bookshelf Pro', 
-    price: 89.00, 
-    description: 'Invisible mounting system for books. Create a stunning wall display that defies gravity and showcases your favorite hardcovers with zero visible hardware.', 
-    category: 'Home Decor', 
-    image: 'https://images.unsplash.com/photo-1594620302200-9a762244a156?auto=format&fit=crop&q=80&w=800', 
-    rating: 4.7, 
-    reviews: 28, 
-    stock: 8, 
-    soldToday: 5, 
-    isNew: true 
-  },
-  { 
-    id: 'hd-3', 
-    name: 'Abstract Silk Wall Art', 
-    price: 149.00, 
-    originalPrice: 199.00, 
-    description: 'Premium silk-screened abstract print. Each piece is hand-pulled on museum-grade silk and framed in solid sustainable walnut for a timeless gallery feel.', 
-    category: 'Home Decor', 
-    image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=800', 
-    rating: 4.9, 
-    reviews: 15, 
-    stock: 5, 
-    soldToday: 3, 
-    isSale: true 
-  },
-  { 
-    id: 'sg-1', 
-    name: 'Smart Aroma Diffuser 2', 
-    price: 79.00, 
-    description: 'Ultra-quiet ultrasonic diffuser with app-controlled scent. Features 16 million colors and Alexa/HomeKit integration for the ultimate ambient atmosphere.', 
-    category: 'Smart Gadgets', 
-    image: 'https://images.unsplash.com/photo-1602928321679-560bb453f190?auto=format&fit=crop&q=80&w=800', 
+    id: 'tws-1', 
+    name: 'TWS Pro Earbuds', 
+    price: 35.00, 
+    description: 'Crystal clear audio with seamless Bluetooth 5.3 connectivity. Touch controls, 30-hour battery life with case.', 
+    category: 'Headphones & Audio', 
+    image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&q=80&w=800',
     rating: 4.6, 
-    reviews: 156, 
-    stock: 22, 
-    soldToday: 48, 
+    reviews: 234, 
+    stock: 45, 
     isBestSeller: true 
   },
   { 
-    id: 'sg-2', 
-    name: 'Levitating Phone Charger', 
-    price: 129.00, 
-    description: 'MagLev technology suspends your phone. The future of charging is here. Features 15W fast wireless charging and a polished carbon fiber base.', 
-    category: 'Smart Gadgets', 
-    image: 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?auto=format&fit=crop&q=80&w=800', 
+    id: 'anc-1', 
+    name: 'ANC Noise Cancelling Buds', 
+    price: 65.00, 
+    originalPrice: 79.00,
+    description: 'Block out the world with advanced Active Noise Cancellation. Perfect for commutes and focused work.', 
+    category: 'Headphones & Audio', 
+    image: 'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?auto=format&fit=crop&q=80&w=800',
+    rating: 4.8, 
+    reviews: 189, 
+    stock: 28, 
+    isBestSeller: true,
+    isSale: true
+  },
+  { 
+    id: 'charger-1', 
+    name: '3-in-1 Charging Station', 
+    price: 52.00, 
+    originalPrice: 65.00,
+    description: 'Charge your phone, watch, and earbuds simultaneously. MagSafe compatible, 15W fast charge.', 
+    category: 'Chargers & Power Banks', 
+    image: 'https://images.unsplash.com/photo-1615526675159-e248c3021d3f?auto=format&fit=crop&q=80&w=800',
+    rating: 4.7, 
+    reviews: 287, 
+    stock: 1, 
+    isBestSeller: true,
+    isSale: true
+  },
+  { 
+    id: 'gan-1', 
+    name: 'GaN Charger 65W', 
+    price: 39.00, 
+    description: 'Compact GaN technology delivers 65W in a pocket-sized design. Charges laptops, phones, and tablets.', 
+    category: 'Chargers & Power Banks', 
+    image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&q=80&w=800',
+    rating: 4.8, 
+    reviews: 623, 
+    stock: 48, 
+    isBestSeller: true 
+  },
+  { 
+    id: 'led-1', 
+    name: 'LED Strip RGB 5M', 
+    price: 25.00, 
+    description: '16 million colors with app control. Music sync mode, timer function, and easy peel-and-stick installation.', 
+    category: 'LED Lighting', 
+    image: 'https://images.unsplash.com/photo-1558470598-a5dda9640f68?auto=format&fit=crop&q=80&w=800',
     rating: 4.5, 
-    reviews: 64, 
-    stock: 10, 
-    soldToday: 15, 
-    isNew: true 
-  },
-  { 
-    id: 'sg-3', 
-    name: 'Smart Mirror Pro', 
-    price: 249.00, 
-    originalPrice: 299.00, 
-    description: 'Gesture-controlled mirror with display. A seamless 4K touch display behind high-transmittance glass. View weather, news, and your health stats while getting ready.', 
-    category: 'Smart Gadgets', 
-    image: 'https://images.unsplash.com/photo-1618220179428-22790b461013?auto=format&fit=crop&q=80&w=800', 
-    rating: 4.9, 
-    reviews: 31, 
-    stock: 3, 
-    soldToday: 2, 
-    isSale: true 
-  },
-  { 
-    id: 'al-1', 
-    name: 'Nebula Cloud Projector', 
-    price: 119.00, 
-    description: 'Transform any room into a galaxy. High-definition laser clouds and 12 astronomical projection modes create an immersive cosmic experience for work or rest.', 
-    category: 'Ambient Lighting', 
-    image: 'https://images.unsplash.com/photo-1534073828943-f801091bb18c?auto=format&fit=crop&q=80&w=800', 
-    rating: 4.8, 
-    reviews: 210, 
-    stock: 40, 
-    soldToday: 67, 
+    reviews: 1234, 
+    stock: 156, 
     isBestSeller: true 
   },
   { 
-    id: 'al-2', 
-    name: 'Modular Hexagon Tiles', 
-    price: 199.00, 
-    description: 'Touch-sensitive modular light tiles. Snap them together in any pattern. Features music sync and dynamic flow effects controlled via your smartphone.', 
-    category: 'Ambient Lighting', 
-    image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=800', 
-    rating: 4.7, 
-    reviews: 89, 
-    stock: 12, 
-    soldToday: 8 
-  },
-  { 
-    id: 'al-3', 
-    name: 'Smart Sunset Lamp Pro', 
-    price: 59.00, 
-    originalPrice: 79.00, 
-    description: 'Perfect golden hour lighting anytime. Professional-grade optics create a realistic atmospheric sunset effect for content creation or meditation.', 
-    category: 'Ambient Lighting', 
-    image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=800', 
-    rating: 4.6, 
-    reviews: 340, 
-    stock: 55, 
-    soldToday: 104, 
-    isSale: true 
-  },
-  { 
-    id: 'gi-1', 
-    name: 'Night Sky Map Poster', 
-    price: 49.00, 
-    description: 'Custom astronomical map of the stars. Recreate the exact alignment of the cosmos for any date and location. Printed on 300gsm matte archival paper.', 
-    category: 'Gift Ideas', 
-    image: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&q=80&w=800', 
-    rating: 4.9, 
-    reviews: 75, 
-    stock: 100, 
-    soldToday: 23 
-  },
-  { 
-    id: 'gi-2', 
-    name: 'Solar System Crystal Ball', 
-    price: 85.00, 
-    description: 'K9 crystal sphere with 3D solar system. Intricate laser engraving inside a flawless optical crystal base. Features 7-color LED rotation base.', 
-    category: 'Gift Ideas', 
-    image: 'https://images.unsplash.com/photo-1614730321146-b6fa6a46bc46?auto=format&fit=crop&q=80&w=800', 
+    id: 'star-1', 
+    name: 'Galaxy Star Projector', 
+    price: 42.00, 
+    originalPrice: 55.00,
+    description: 'Project a stunning nebula and star field on your ceiling. Rotating clouds, adjustable brightness. TikTok famous!', 
+    category: 'LED Lighting', 
+    image: 'https://images.unsplash.com/photo-1536431311719-398b6704d4cc?auto=format&fit=crop&q=80&w=800',
     rating: 4.8, 
-    reviews: 43, 
-    stock: 18, 
-    soldToday: 11, 
-    isNew: true 
+    reviews: 2156, 
+    stock: 2, 
+    isBestSeller: true,
+    isSale: true
   },
   { 
-    id: 'gi-3', 
-    name: 'Premium Smart Mug', 
-    price: 159.00, 
-    description: 'Maintains coffee at exact temperature. Set your preferred heat level via the app and keep your beverage perfect for hours with its ceramic-coated titanium core.', 
-    category: 'Gift Ideas', 
-    image: 'https://images.unsplash.com/photo-1517142089942-ba376ce32a2e?auto=format&fit=crop&q=80&w=800', 
+    id: 'sunset-1', 
+    name: 'Sunset Projection Lamp', 
+    price: 32.00, 
+    description: 'Create that golden hour glow anytime. 180° rotation, multiple color options. Perfect for photos.', 
+    category: 'LED Lighting', 
+    image: 'https://images.unsplash.com/photo-1614850715649-1d0106293bd1?auto=format&fit=crop&q=80&w=800',
+    rating: 4.6, 
+    reviews: 892, 
+    stock: 47, 
+    isBestSeller: true 
+  },
+  { 
+    id: 'magsafe-1', 
+    name: 'MagSafe Power Bank', 
+    price: 52.00, 
+    description: 'Magnetic wireless charging on-the-go. Snaps onto iPhone 12+ for cable-free power. Ultra-slim design.', 
+    category: 'Chargers & Power Banks', 
+    image: 'https://images.unsplash.com/photo-1616348436168-de43ad0db179?auto=format&fit=crop&q=80&w=800',
     rating: 4.7, 
-    reviews: 112, 
-    stock: 25, 
-    soldToday: 34, 
+    reviews: 334, 
+    stock: 31, 
+    isNew: true,
+    isBestSeller: true 
+  },
+  { 
+    id: 'massage-1', 
+    name: 'Massage Gun Pro', 
+    price: 95.00, 
+    originalPrice: 129.00,
+    description: 'Deep tissue percussion therapy with 30 speed levels. 6 interchangeable heads, ultra-quiet motor.', 
+    category: 'Fitness & Health', 
+    image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=800',
+    rating: 4.8, 
+    reviews: 1234, 
+    stock: 38, 
+    isBestSeller: true,
+    isSale: true
+  },
+  { 
+    id: 'ring-1', 
+    name: 'Ring Light 10 Inch', 
+    price: 42.00, 
+    description: 'Perfect lighting for video calls and content. 3 color modes, 10 brightness levels, phone holder included.', 
+    category: 'LED Lighting', 
+    image: 'https://images.unsplash.com/photo-1616763355603-9755a640a287?auto=format&fit=crop&q=80&w=800',
+    rating: 4.6, 
+    reviews: 1123, 
+    stock: 78, 
+    isBestSeller: true 
+  },
+  { 
+    id: 'smart-1', 
+    name: 'Smart Plug WiFi', 
+    price: 18.00, 
+    description: 'Control any device from your phone. Energy monitoring, schedules, and voice control with Alexa and Google.', 
+    category: 'Smart Home', 
+    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&q=80&w=800',
+    rating: 4.5, 
+    reviews: 1234, 
+    stock: 156, 
+    isBestSeller: true 
+  },
+  { 
+    id: 'gaming-1', 
+    name: 'RGB Gaming Mouse', 
+    price: 35.00, 
+    description: '16000 DPI sensor with 7 programmable buttons. Customizable RGB lighting and ergonomic design.', 
+    category: 'Computer & Gaming', 
+    image: 'https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&q=80&w=800',
+    rating: 4.6, 
+    reviews: 678, 
+    stock: 67, 
     isBestSeller: true 
   }
 ];
 
+// Categories for fallback
+export const FALLBACK_CATEGORIES = [
+  'All',
+  'Headphones & Audio',
+  'Chargers & Power Banks',
+  'LED Lighting',
+  'Phone Accessories',
+  'Smart Home',
+  'Fitness & Health',
+  'Computer & Gaming',
+  'Car Accessories'
+];
+
+// Current products state (populated from Supabase or fallback)
+let cachedProducts: Product[] | null = null;
+let cachedCategories: string[] | null = null;
+
+// Fetch products from Supabase with fallback
+export const fetchProducts = async (): Promise<Product[]> => {
+  if (cachedProducts) return cachedProducts;
+  
+  try {
+    const products = await getSupabaseProducts();
+    if (products && products.length > 0) {
+      cachedProducts = products;
+      return products;
+    }
+  } catch (error) {
+    console.error('Failed to fetch from Supabase, using fallback:', error);
+  }
+  
+  cachedProducts = FALLBACK_PRODUCTS;
+  return FALLBACK_PRODUCTS;
+};
+
+// Fetch categories from Supabase with fallback
+export const fetchCategories = async (): Promise<string[]> => {
+  if (cachedCategories) return cachedCategories;
+  
+  try {
+    const categories = await getSupabaseCategories();
+    if (categories && categories.length > 1) {
+      cachedCategories = categories;
+      return categories;
+    }
+  } catch (error) {
+    console.error('Failed to fetch categories from Supabase, using fallback:', error);
+  }
+  
+  cachedCategories = FALLBACK_CATEGORIES;
+  return FALLBACK_CATEGORIES;
+};
+
+// Clear cache (useful for refreshing data)
+export const clearProductCache = () => {
+  cachedProducts = null;
+  cachedCategories = null;
+};
+
+// Get stock urgency message
+export const getStockUrgencyMessage = (stock: number): { message: string; urgent: boolean } | null => {
+  if (stock <= 0) {
+    return { message: 'Out of stock', urgent: true };
+  }
+  if (stock === 1) {
+    return { message: 'Hurry! Only 1 left in stock', urgent: true };
+  }
+  if (stock === 2) {
+    return { message: 'Only 2 left in stock', urgent: true };
+  }
+  if (stock === 3) {
+    return { message: 'Only 3 left in stock', urgent: true };
+  }
+  return null;
+};
+
+// Legacy exports for backward compatibility
+export const INITIAL_PRODUCTS = FALLBACK_PRODUCTS;
+export const CATEGORIES = FALLBACK_CATEGORIES;
+
+// Impulse items for cart upsells
 export const IMPULSE_ITEMS: Product[] = [
   { 
     id: 'imp-1', 
@@ -178,27 +253,24 @@ export const IMPULSE_ITEMS: Product[] = [
   },
   { 
     id: 'imp-2', 
-    name: 'Premium Sticker Pack', 
+    name: 'USB-C Cable 2-Pack', 
     price: 12.00, 
-    description: 'Set of 12 holographic hardware stickers.', 
+    description: 'Braided 6ft cables with fast charging support.', 
     category: 'Accessories', 
-    image: 'https://images.unsplash.com/photo-1572375927902-1c09e2947199?auto=format&fit=crop&q=80&w=400', 
+    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&q=80&w=400', 
     rating: 4.8, 
     reviews: 840, 
     stock: 200 
   },
   { 
     id: 'imp-3', 
-    name: 'Organic Scent Refill', 
-    price: 19.00, 
-    description: 'Natural lavender and eucalyptus oils.', 
+    name: 'Phone Stand Mini', 
+    price: 15.00, 
+    description: 'Compact aluminum stand for desk use.', 
     category: 'Accessories', 
-    image: 'https://images.unsplash.com/photo-1540324155974-7523202daa3f?auto=format&fit=crop&q=80&w=400', 
+    image: 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&q=80&w=400', 
     rating: 4.7, 
     reviews: 412, 
     stock: 150 
   }
 ];
-
-export const CATEGORIES = ['All', 'Home Decor', 'Smart Gadgets', 'Ambient Lighting', 'Gift Ideas'];
-

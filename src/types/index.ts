@@ -6,6 +6,7 @@ export interface Product {
   originalPrice?: number;
   description: string;
   category: string;
+  subcategory?: string;
   image: string;
   images?: string[];
   rating: number;
@@ -15,6 +16,9 @@ export interface Product {
   isNew?: boolean;
   isBestSeller?: boolean;
   isSale?: boolean;
+  isFeatured?: boolean;
+  trendScore?: number;
+  tags?: string[];
 }
 
 export interface CartItem extends Product {

@@ -234,7 +234,7 @@ interface CartItem extends Product {
   quantity: number;
 }
 
-type ViewState = 'home' | 'shop' | 'product-detail' | 'cart-page' | 'checkout' | 'success' | 'wishlist-page' | 'about' | 'accessibility' | 'terms' | 'privacy' | '404';
+type ViewState = 'home' | 'shop' | 'product-detail' | 'cart-page' | 'checkout' | 'success' | 'wishlist-page' | 'about' | 'accessibility' | 'terms' | 'privacy' | 'blog' | 'article' | '404';
 
 // --- Product Catalog ---
 
@@ -634,6 +634,7 @@ const App = () => {
   const [cart, setCart] = useState<CartItem[]>(() => JSON.parse(localStorage.getItem('sparkgear_cart') || '[]'));
   const [wishlist, setWishlist] = useState<string[]>(() => JSON.parse(localStorage.getItem('sparkgear_wishlist') || '[]'));
   const [recentlyViewed, setRecentlyViewed] = useState<string[]>(() => JSON.parse(localStorage.getItem('sparkgear_recent') || '[]'));
+  const [currentArticleSlug, setCurrentArticleSlug] = useState<string>('');
   
   const [activeCategory, setActiveCategory] = useState('All');
   const [activeFilter, setActiveFilter] = useState<'all' | 'new' | 'sale'>('all');
@@ -1618,6 +1619,20 @@ const App = () => {
         {view === 'privacy' && (
           <PrivacyPage onBack={navigateToHome} t={t} />
         )}
+
+        {/* BLOG VIEW */}
+        {view === 'blog' && (
+          <BlogPage onNavigate={(slug) => { setCurrentArticleSlug(slug); setView('article'); }} />
+        )}
+
+        {/* ARTICLE VIEW */}
+        {view === 'article' && (
+          <ArticlePage 
+            slug={currentArticleSlug} 
+            onBack={() => setView('blog')} 
+            onNavigate={(slug) => { setCurrentArticleSlug(slug); window.scrollTo(0, 0); }} 
+          />
+        )}
       </AnimatePresence>
 
       {/* Accessibility Widget */}
@@ -1698,11 +1713,11 @@ const App = () => {
                 </ul>
               </div>
               <div className="text-center lg:text-left">
-                <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] mb-6 text-shop-primary">Legal</h4>
+                <h4 className="text-[10px] font-bold uppercase tracking-[0.4em] mb-6 text-shop-primary">Resources</h4>
                 <ul className="space-y-4">
+                  <li><button onClick={() => setView('blog')} className="text-xs font-bold uppercase tracking-widest text-shop-muted hover:text-shop-accent transition-colors">Blog & Guides</button></li>
                   <li><button onClick={() => setView('terms')} className="text-xs font-bold uppercase tracking-widest text-shop-muted hover:text-shop-accent transition-colors">Terms of Service</button></li>
                   <li><button onClick={() => setView('privacy')} className="text-xs font-bold uppercase tracking-widest text-shop-muted hover:text-shop-accent transition-colors">Privacy Policy</button></li>
-                  <li><button onClick={() => setView('accessibility')} className="text-xs font-bold uppercase tracking-widest text-shop-muted hover:text-shop-accent transition-colors flex items-center gap-2"><Accessibility size={12} /> Accessibility</button></li>
                 </ul>
               </div>
             </div>
@@ -2755,6 +2770,121 @@ const LegalSection = ({ title, children }: { title: string, children: React.Reac
     <div className="text-gray-600 leading-relaxed space-y-3">{children}</div>
   </section>
 );
+
+// --- Blog Components ---
+// (Import these from the src/pages/Blog.tsx file we created)
+// Since this is index.tsx, we'll inline simple versions for now
+
+const { ARTICLES } = await import('./data/articles');
+
+const BlogPage = ({ onNavigate }: { onNavigate: (slug: string) => void }) => {
+  return (
+    <div className="min-h-screen bg-white pt-20">
+      <section className="py-20 bg-gradient-to-br from-shop-primary/5 to-shop-accent/5">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tighter uppercase text-shop-primary">Blog & Insights</h1>
+          <p className="text-xl text-shop-text-secondary max-w-3xl mx-auto">Practical guides, honest reviews, and real experiences.</p>
+        </div>
+      </section>
+      
+      <section className="py-16 md:py-24">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {ARTICLES.map((article) => (
+              <button
+                key={article.id}
+                onClick={() => onNavigate(article.slug)}
+                className="group block h-full text-left w-full bg-white border border-shop-border rounded-3xl overflow-hidden hover:border-shop-accent hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+              >
+                <div className="relative h-48 bg-shop-bg flex items-center justify-center">
+                  <BookOpen className="text-shop-muted" size={64} />
+                  <div className="absolute bottom-4 right-4">
+                    <span className="px-3 py-1 bg-shop-accent text-white text-xs font-bold uppercase tracking-wider rounded-full">
+                      {article.category}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <h2 className="text-xl font-bold text-shop-primary mb-3 line-clamp-2 group-hover:text-shop-accent transition-colors">
+                    {article.title}
+                  </h2>
+                  <p className="text-shop-text-secondary mb-4 line-clamp-3 text-sm">{article.description}</p>
+                  <div className="flex items-center gap-4 text-xs text-shop-muted uppercase tracking-wider font-bold">
+                    <div className="flex items-center gap-1">
+                      <Clock size={14} />
+                      <span>{article.readingTime}</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center gap-2 text-shop-accent font-bold text-sm uppercase tracking-wider">
+                    <span>Read Article</span>
+                    <ArrowRight size={18} />
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+const ArticlePage = ({ slug, onBack, onNavigate }: { slug: string; onBack: () => void; onNavigate: (slug: string) => void }) => {
+  const article = ARTICLES.find(a => a.slug === slug);
+  const [content, setContent] = useState<string>('');
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    const loadContent = async () => {
+      try {
+        const response = await fetch(`/content/articles/${article?.content}`);
+        const text = await response.text();
+        setContent(text);
+      } catch (error) {
+        console.error('Error loading article:', error);
+      }
+    };
+    if (article) loadContent();
+  }, [article, slug]);
+
+  if (!article) return <div className="pt-20 text-center py-20"><h1 className="text-4xl font-bold">Article Not Found</h1></div>;
+
+  return (
+    <div className="min-h-screen bg-white pt-20">
+      <section className="py-20 bg-gradient-to-br from-shop-primary/5 to-shop-accent/5">
+        <div className="max-w-4xl mx-auto px-4">
+          <button onClick={onBack} className="flex items-center gap-2 text-shop-text-secondary hover:text-shop-primary mb-8 font-bold uppercase tracking-wider text-xs">
+            <ArrowLeft size={20} />
+            <span>Back to Blog</span>
+          </button>
+          <span className="px-4 py-1.5 bg-shop-accent text-white text-xs font-bold uppercase tracking-wider rounded-full">{article.category}</span>
+          <h1 className="text-4xl md:text-6xl font-bold text-shop-primary my-6 leading-tight">{article.title}</h1>
+          <div className="flex items-center gap-6 text-shop-text-secondary text-sm font-bold uppercase">
+            <div className="flex items-center gap-2"><Clock size={18} /><span>{article.readingTime}</span></div>
+            <div className="flex items-center gap-2"><Calendar size={18} /><span>{article.publishDate}</span></div>
+          </div>
+        </div>
+      </section>
+      
+      <section className="py-12 md:py-20">
+        <div className="max-w-3xl mx-auto px-4">
+          <article className="prose prose-lg max-w-none text-shop-text-secondary leading-relaxed">
+            {content ? content.split('\n').map((line, i) => {
+              if (line.startsWith('# ')) return <h1 key={i} className="text-4xl font-bold text-shop-primary mt-8 mb-4">{line.substring(2)}</h1>;
+              if (line.startsWith('## ')) return <h2 key={i} className="text-3xl font-bold text-shop-primary mt-8 mb-4">{line.substring(3)}</h2>;
+              if (line.startsWith('### ')) return <h3 key={i} className="text-2xl font-bold text-shop-primary mt-6 mb-3">{line.substring(4)}</h3>;
+              if (line.trim() && !line.startsWith('#') && !line.startsWith('-')) {
+                const boldLine = line.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold">$1</strong>');
+                return <p key={i} className="mb-4" dangerouslySetInnerHTML={{ __html: boldLine }} />;
+              }
+              return null;
+            }) : <div className="text-center py-12"><div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-shop-accent"></div></div>}
+          </article>
+        </div>
+      </section>
+    </div>
+  );
+};
 
 const root = createRoot(document.getElementById('root')!);
 root.render(<App />);

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { Product } from '../types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -7,14 +8,19 @@ export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
+// Store ID for SparkGear
+const STORE_ID = 'sparkgear';
+
 // Database Types (for when Supabase is connected)
 export interface DbProduct {
   id: string;
+  store_id: string;
   name: string;
   price: number;
   original_price?: number;
   description: string;
   category: string;
+  subcategory?: string;
   image_url: string;
   images?: string[];
   rating: number;
@@ -23,10 +29,36 @@ export interface DbProduct {
   sold_today?: number;
   is_new?: boolean;
   is_best_seller?: boolean;
+  is_featured?: boolean;
   is_sale?: boolean;
+  trend_score?: number;
+  tags?: string[];
   created_at: string;
   updated_at: string;
 }
+
+// Transform database product to frontend Product type
+export const transformDbProduct = (dbProduct: DbProduct): Product => ({
+  id: dbProduct.id,
+  name: dbProduct.name,
+  price: Number(dbProduct.price),
+  originalPrice: dbProduct.original_price ? Number(dbProduct.original_price) : undefined,
+  description: dbProduct.description || '',
+  category: dbProduct.category,
+  subcategory: dbProduct.subcategory,
+  image: dbProduct.image_url,
+  images: dbProduct.images,
+  rating: Number(dbProduct.rating) || 4.5,
+  reviews: dbProduct.reviews_count || 0,
+  stock: dbProduct.stock || 0,
+  soldToday: dbProduct.sold_today,
+  isNew: dbProduct.is_new,
+  isBestSeller: dbProduct.is_best_seller,
+  isSale: dbProduct.is_sale,
+  isFeatured: dbProduct.is_featured,
+  trendScore: dbProduct.trend_score,
+  tags: dbProduct.tags,
+});
 
 export interface DbOrder {
   id: string;
@@ -44,25 +76,62 @@ export interface DbOrder {
 }
 
 // Supabase helper functions
-export const getProducts = async () => {
+export const getProducts = async (): Promise<Product[] | null> => {
   if (!supabase) return null;
   const { data, error } = await supabase
     .from('products')
     .select('*')
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data;
+    .eq('store_id', STORE_ID)
+    .order('trend_score', { ascending: false });
+  if (error) {
+    console.error('Error fetching products:', error);
+    return null;
+  }
+  return data ? data.map(transformDbProduct) : null;
 };
 
-export const getProductById = async (id: string) => {
+export const getProductsByCategory = async (category: string): Promise<Product[] | null> => {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('store_id', STORE_ID)
+    .eq('category', category)
+    .order('trend_score', { ascending: false });
+  if (error) {
+    console.error('Error fetching products by category:', error);
+    return null;
+  }
+  return data ? data.map(transformDbProduct) : null;
+};
+
+export const getProductById = async (id: string): Promise<Product | null> => {
   if (!supabase) return null;
   const { data, error } = await supabase
     .from('products')
     .select('*')
     .eq('id', id)
+    .eq('store_id', STORE_ID)
     .single();
-  if (error) throw error;
-  return data;
+  if (error) {
+    console.error('Error fetching product:', error);
+    return null;
+  }
+  return data ? transformDbProduct(data) : null;
+};
+
+export const getCategories = async (): Promise<string[] | null> => {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('products')
+    .select('category')
+    .eq('store_id', STORE_ID);
+  if (error) {
+    console.error('Error fetching categories:', error);
+    return null;
+  }
+  const categories = [...new Set(data?.map(p => p.category) || [])];
+  return ['All', ...categories.sort()];
 };
 
 export const createOrder = async (orderData: Omit<DbOrder, 'id' | 'created_at'>) => {
