@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 import { Product, CartItem, ViewState, Order, ChatMessage } from './types';
-import { INITIAL_PRODUCTS, IMPULSE_ITEMS, CATEGORIES } from './data/products';
+import { IMPULSE_ITEMS, fetchProducts, fetchCategories, FALLBACK_PRODUCTS, FALLBACK_CATEGORIES } from './data/products';
 import { useCart, useWishlist, useRecentlyViewed } from './hooks';
 import { getSmartSearchResults, createChatSession, getAIVoiceFeedback, playAudioBase64, ai } from './lib/ai';
 import { CheckoutPage, SuccessPage } from './pages';
@@ -81,6 +81,11 @@ const ProductCard = ({ product, onClick, onAddToCart, onQuickView, isWishlisted,
           {product.isNew && <Badge variant="new">New</Badge>}
           {product.isSale && <Badge variant="sale">Sale</Badge>}
           {product.isBestSeller && <Badge variant="bestseller">Best Seller</Badge>}
+          {product.stock <= 3 && product.stock > 0 && (
+            <span className="px-2 py-1 text-[9px] font-bold uppercase tracking-wider bg-red-500 text-white rounded-lg animate-pulse">
+              Only {product.stock} left!
+            </span>
+          )}
         </div>
         <button 
           onClick={(e) => { e.stopPropagation(); onToggleWishlist(product.id); }}
@@ -616,6 +621,10 @@ export const App = () => {
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   
+  // Products state - fetched from Supabase with fallback
+  const [products, setProducts] = useState<Product[]>(FALLBACK_PRODUCTS);
+  const [categories, setCategories] = useState<string[]>(FALLBACK_categories);
+  
   const { 
     cart, addToCart, updateQuantity, removeFromCart, clearCart,
     subtotal, shipping, discount, total, itemCount,
@@ -633,7 +642,7 @@ export const App = () => {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   
   // Calculate max price for filters
-  const maxPrice = Math.ceil(Math.max(...INITIAL_PRODUCTS.map(p => p.price), 500) / 50) * 50;
+  const maxPrice = Math.ceil(Math.max(...products.map(p => p.price), 500) / 50) * 50;
   
   const [filters, setFilters] = useState<FilterState>({
     priceRange: [0, maxPrice],
@@ -647,6 +656,27 @@ export const App = () => {
   const [viewers] = useState(3);
 
   const { scrollYProgress } = useScroll();
+
+  // Fetch products from Supabase on mount
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const [fetchedProducts, fetchedCategories] = await Promise.all([
+          fetchProducts(),
+          fetchCategories()
+        ]);
+        if (fetchedProducts.length > 0) {
+          setProducts(fetchedProducts);
+        }
+        if (fetchedCategories.length > 0) {
+          setCategories(fetchedCategories);
+        }
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+      }
+    };
+    loadProducts();
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 40);
@@ -688,7 +718,7 @@ export const App = () => {
     e.preventDefault();
     if (!searchQuery) return;
     setView('shop');
-    const results = await getSmartSearchResults(searchQuery, INITIAL_PRODUCTS);
+    const results = await getSmartSearchResults(searchQuery, products);
     setSearchResults(results);
   };
 
@@ -705,7 +735,7 @@ export const App = () => {
         setSearchQuery(transcript);
         setIsListening(false);
         setView('shop');
-        getSmartSearchResults(transcript, INITIAL_PRODUCTS).then(results => setSearchResults(results));
+        getSmartSearchResults(transcript, products).then(results => setSearchResults(results));
       };
       recognition.onerror = () => setIsListening(false);
       recognition.onend = () => setIsListening(false);
@@ -933,7 +963,7 @@ export const App = () => {
                     onClick={() => navigateToShop(cat)}
                     className="group relative h-96 rounded-[2rem] overflow-hidden cursor-pointer"
                   >
-                    <img src={INITIAL_PRODUCTS.find(p => p.category === cat)?.image || ''} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={cat} />
+                    <img src={products.find(p => p.category === cat)?.image || ''} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={cat} />
                     <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors" />
                     <div className="absolute bottom-0 left-0 p-8">
                       <h3 className="text-white text-2xl font-bold uppercase tracking-tight mb-2">{cat}</h3>
@@ -956,7 +986,7 @@ export const App = () => {
                 <button onClick={() => navigateToShop('All')} className="text-xs font-bold uppercase tracking-widest border-b border-shop-border pb-1 hover:text-shop-accent hover:border-shop-accent transition-all">View All</button>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {INITIAL_PRODUCTS.filter(p => p.isBestSeller).slice(0, 4).map(p => (
+                {products.filter(p => p.isBestSeller).slice(0, 4).map(p => (
                   <ProductCard 
                     key={p.id} 
                     product={p} 
@@ -1047,7 +1077,7 @@ export const App = () => {
                     filters={filters}
                     onFiltersChange={setFilters}
                     maxPrice={maxPrice}
-                    productCount={INITIAL_PRODUCTS.filter(p => {
+                    productCount={products.filter(p => {
                       if (searchResults) return searchResults.ids.includes(p.id);
                       return activeCategory === 'All' || p.category === activeCategory;
                     }).length}
@@ -1061,7 +1091,7 @@ export const App = () => {
                     <div className="mb-6 pb-6 border-b border-shop-border">
                       <h3 className="text-xs font-bold uppercase tracking-widest mb-4 text-shop-primary">Categories</h3>
                       <ul className="space-y-2">
-                        {CATEGORIES.map(cat => (
+                        {categories.map(cat => (
                           <li key={cat}>
                             <button 
                               onClick={() => { setActiveCategory(cat); setSearchResults(null); setSearchQuery(''); }}
@@ -1081,7 +1111,7 @@ export const App = () => {
                       filters={filters}
                       onFiltersChange={setFilters}
                       maxPrice={maxPrice}
-                      productCount={INITIAL_PRODUCTS.filter(p => {
+                      productCount={products.filter(p => {
                         if (searchResults) return searchResults.ids.includes(p.id);
                         return activeCategory === 'All' || p.category === activeCategory;
                       }).length}
@@ -1091,7 +1121,7 @@ export const App = () => {
 
                 <div className="flex-1">
                   <div className="lg:hidden flex overflow-x-auto gap-2 pb-6">
-                    {CATEGORIES.map(cat => (
+                    {categories.map(cat => (
                       <button 
                         key={cat}
                         onClick={() => { setActiveCategory(cat); setSearchResults(null); setSearchQuery(''); }}
@@ -1106,7 +1136,7 @@ export const App = () => {
                     {isGlobalLoading ? (
                       [...Array(6)].map((_, i) => <ProductCard key={i} isLoading={true} />)
                     ) : (
-                      INITIAL_PRODUCTS
+                      products
                         .filter(p => {
                           // AI Search filter
                           if (searchResults) return searchResults.ids.includes(p.id);
@@ -1242,7 +1272,7 @@ export const App = () => {
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-8">
                 {wishlist.map(id => {
-                  const p = INITIAL_PRODUCTS.find(item => item.id === id);
+                  const p = products.find(item => item.id === id);
                   return p ? (
                     <ProductCard 
                       key={p.id} 
@@ -1385,7 +1415,7 @@ export const App = () => {
       <SocialProof />
       <ExitIntentPopup onClaim={() => applyPromoCode('SPARKGEAR15')} />
       <AIAssistant 
-        products={INITIAL_PRODUCTS} 
+        products={products} 
         onAddToCart={addToCart} 
         currentView={view} 
         navigateToProduct={navigateToProduct}

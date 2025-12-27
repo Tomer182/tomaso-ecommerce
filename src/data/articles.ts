@@ -23,7 +23,7 @@ export const ARTICLES: Article[] = [
     readingTime: "10 min read",
     publishDate: "December 2025",
     keywords: ["smart home", "home automation", "IoT", "smart lighting", "home technology", "energy savings"],
-    image: "/placeholder.jpg",
+    image: "https://images.unsplash.com/photo-1558002038-1055907df827?w=800&h=600&fit=crop",
     content: "01-smart-home-revolution-2025.md"
   },
   {
@@ -35,7 +35,7 @@ export const ARTICLES: Article[] = [
     readingTime: "12 min read",
     publishDate: "December 2025",
     keywords: ["minimalism", "decluttering", "simple living", "minimalist lifestyle", "downsizing", "intentional living"],
-    image: "/placeholder.jpg",
+    image: "https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=800&h=600&fit=crop",
     content: "02-minimalist-living-ultimate-guide.md"
   },
   {
@@ -47,7 +47,7 @@ export const ARTICLES: Article[] = [
     readingTime: "11 min read",
     publishDate: "December 2025",
     keywords: ["color psychology", "interior design", "home decor", "paint colors", "room design", "home aesthetics"],
-    image: "/placeholder.jpg",
+    image: "https://images.unsplash.com/photo-1615876234886-fd9a39fda97f?w=800&h=600&fit=crop",
     content: "03-psychology-color-home-design.md"
   },
   {
@@ -59,7 +59,7 @@ export const ARTICLES: Article[] = [
     readingTime: "10 min read",
     publishDate: "December 2025",
     keywords: ["sustainability", "eco-friendly living", "green lifestyle", "reduce waste", "environmental impact", "conscious consumption"],
-    image: "/placeholder.jpg",
+    image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&h=600&fit=crop",
     content: "04-sustainable-living-practical-guide.md"
   },
   {
@@ -71,7 +71,7 @@ export const ARTICLES: Article[] = [
     readingTime: "11 min read",
     publishDate: "December 2025",
     keywords: ["work from home", "home office setup", "remote work", "productivity", "ergonomics", "WFH tips"],
-    image: "/placeholder.jpg",
+    image: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=800&h=600&fit=crop",
     content: "05-work-from-home-productivity-setup.md"
   },
   {
@@ -83,7 +83,7 @@ export const ARTICLES: Article[] = [
     readingTime: "9 min read",
     publishDate: "December 2025",
     keywords: ["gift giving", "gift ideas", "thoughtful gifts", "present ideas", "gift guide", "shopping tips"],
-    image: "/placeholder.jpg",
+    image: "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop",
     content: "06-perfect-gift-giving-guide.md"
   },
   {
@@ -95,7 +95,7 @@ export const ARTICLES: Article[] = [
     readingTime: "10 min read",
     publishDate: "December 2025",
     keywords: ["better sleep", "sleep quality", "sleep science", "insomnia solutions", "sleep hygiene", "healthy sleep"],
-    image: "/placeholder.jpg",
+    image: "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=800&h=600&fit=crop",
     content: "07-better-sleep-science-guide.md"
   },
   {
@@ -107,7 +107,7 @@ export const ARTICLES: Article[] = [
     readingTime: "9 min read",
     publishDate: "December 2025",
     keywords: ["digital minimalism", "screen time", "phone addiction", "digital detox", "productivity", "focus"],
-    image: "/placeholder.jpg",
+    image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&h=600&fit=crop",
     content: "08-digital-minimalism-complete-guide.md"
   },
   {
@@ -119,7 +119,7 @@ export const ARTICLES: Article[] = [
     readingTime: "10 min read",
     publishDate: "December 2025",
     keywords: ["home upgrades", "home improvement", "DIY projects", "home value", "budget renovations", "home staging"],
-    image: "/placeholder.jpg",
+    image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&h=600&fit=crop",
     content: "09-budget-home-upgrades-guide.md"
   },
   {
@@ -131,7 +131,7 @@ export const ARTICLES: Article[] = [
     readingTime: "11 min read",
     publishDate: "December 2025",
     keywords: ["stress management", "anxiety relief", "mental health", "wellness", "stress reduction", "self-care"],
-    image: "/placeholder.jpg",
+    image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=600&fit=crop",
     content: "10-stress-management-science-guide.md"
   }
 ];
