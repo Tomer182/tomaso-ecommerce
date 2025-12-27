@@ -1,0 +1,54 @@
+# SPARKGEAR - robots.txt
+# https://sparkgear.net
+
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://sparkgear.net/sitemap.xml
+
+# Crawl-delay for polite bots
+Crawl-delay: 1
+
+# Block common spam/scraper bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+# Allow all major search engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Yandex
+Allow: /
+
+# Social media bots (for link previews)
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: Pinterest
+Allow: /
+
