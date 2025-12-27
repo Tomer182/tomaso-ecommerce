@@ -15,6 +15,9 @@ import { IMPULSE_ITEMS, fetchProducts, fetchCategories, FALLBACK_PRODUCTS, FALLB
 import { useCart, useWishlist, useRecentlyViewed } from './hooks';
 import { getSmartSearchResults, createChatSession, getAIVoiceFeedback, playAudioBase64, ai } from './lib/ai';
 import { CheckoutPage, SuccessPage } from './pages';
+import { AdminDashboard } from './pages/AdminDashboard';
+import { OwnerApp } from './admin/owner/OwnerApp';
+import { ClientApp } from './admin/client/ClientApp';
 import { FiltersPanel, FilterState } from './components';
 
 // --- UI Components ---
@@ -615,7 +618,28 @@ const QuickViewModal = ({ product, isOpen, onClose, onAddToCart }: any) => {
 
 // --- Main App ---
 
+// 🔐 SECRET ADMIN ROUTE - Only accessible via direct URL
+// Admin Routes
+const OWNER_ADMIN_PATH = '/command-center';
+const CLIENT_ADMIN_PATH = '/store-admin';
+const LEGACY_ADMIN_PATH = '/autopilot-mission-control-2025';
+
 export const App = () => {
+  // Check admin routes
+  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+  const isOwnerAdminRoute = currentPath === OWNER_ADMIN_PATH;
+  const isClientAdminRoute = currentPath === CLIENT_ADMIN_PATH;
+  const isLegacyAdminRoute = currentPath === LEGACY_ADMIN_PATH;
+  
+  // If it's an admin route, render the appropriate admin app
+  if (isOwnerAdminRoute) {
+    return <OwnerApp />;
+  }
+  
+  if (isClientAdminRoute) {
+    return <ClientApp />;
+  }
+
   const [view, setView] = useState<ViewState>('home');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
@@ -1398,6 +1422,11 @@ export const App = () => {
             order={completedOrder}
             onContinueShopping={navigateToHome}
           />
+        )}
+
+        {/* LEGACY ADMIN DASHBOARD - Access via URL only */}
+        {isLegacyAdminRoute && (
+          <AdminDashboard onExit={() => window.location.href = '/'} />
         )}
 
         {/* 404 VIEW */}

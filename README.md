@@ -1,8 +1,7 @@
-# ⚡ SPARKGEAR (Tomaso E-Commerce)
+# ⚡ SPARKGEAR
 
 **AI-Powered Tech & Gadgets Store**  
-**Domain:** sparkgear.net  
-**Live:** https://tomaso-ecommerce.vercel.app
+**Domain:** [sparkgear.net](https://sparkgear.net)
 
 ---
 
@@ -39,6 +38,12 @@
 ### Multi-Language ✅
 🇺🇸 English | 🇮🇱 עברית | 🇩🇪 Deutsch | 🇫🇷 Français | 🇷🇺 Русский | 🇺🇦 Українська | 🇪🇸 Español | 🇵🇹 Português
 
+### Dropshipping Automation ✅
+- Product-Supplier mapping (CJ, Spocket, AliExpress)
+- CJDropshipping API integration
+- Smart order routing (cheapest/fastest/preferred)
+- Admin dashboard for order management
+
 ### Integrations ✅
 - Stripe payment ready
 - Supabase database ready
@@ -66,9 +71,9 @@
 ## 🚀 Quick Start
 
 ```bash
-# Clone
+# Clone the parent repo
 git clone https://github.com/Tomer182/tomaso-ecommerce.git
-cd tomaso-ecommerce
+cd tomaso-ecommerce/sparkgear
 
 # Install
 npm install
@@ -79,6 +84,7 @@ VITE_GEMINI_API_KEY=your_gemini_api_key
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
+VITE_CJ_API_KEY=your_cj_api_key
 
 # Run development server
 npm run dev  # localhost:3000
@@ -89,28 +95,44 @@ npm run dev  # localhost:3000
 ## 📁 Project Structure
 
 ```
-tomaso-ecommerce/
-├── index.tsx               # Main app (multilingual)
+sparkgear/
+├── api/
+│   ├── create-payment-intent.ts  # Stripe serverless function
+│   └── webhook.ts                # Stripe webhook handler
 ├── src/
-│   ├── App.tsx             # Alternative app version
-│   ├── index.css           # Tailwind styles
+│   ├── App.tsx                   # Main app
+│   ├── index.css                 # Tailwind styles
 │   ├── components/
-│   │   └── StripePaymentForm.tsx
+│   │   ├── FiltersPanel.tsx      # Product filters
+│   │   └── StripePaymentForm.tsx # Payment form
 │   ├── data/
-│   │   └── products.ts     # Product catalog
+│   │   ├── products.ts           # Product catalog
+│   │   └── articles.ts           # Blog articles
 │   ├── hooks/
 │   │   ├── useCart.ts
 │   │   ├── useWishlist.ts
 │   │   └── useRecentlyViewed.ts
 │   ├── lib/
-│   │   ├── ai.ts           # Gemini integration
-│   │   ├── stripe.ts       # Stripe integration
-│   │   └── supabase.ts     # Supabase client
+│   │   ├── ai.ts                 # Gemini integration
+│   │   ├── stripe.ts             # Stripe integration
+│   │   ├── supabase.ts           # Supabase client
+│   │   ├── productSuppliers.ts   # Supplier mapping
+│   │   ├── cjdropshipping.ts     # CJ API
+│   │   ├── orderRouter.ts        # Smart routing
+│   │   └── orderService.ts       # Order orchestration
 │   ├── pages/
+│   │   ├── AdminDashboard.tsx    # Order management
 │   │   ├── CheckoutPage.tsx
 │   │   └── SuccessPage.tsx
 │   └── types/
 │       └── index.ts
+├── content/
+│   └── articles/                 # SEO blog content (10 articles)
+├── public/
+│   ├── favicon.svg
+│   ├── robots.txt
+│   ├── sitemap.xml
+│   └── site.webmanifest
 ├── package.json
 ├── tailwind.config.js
 ├── vite.config.ts
@@ -133,9 +155,9 @@ tomaso-ecommerce/
 
 | Resource | URL |
 |----------|-----|
-| **Domain** | https://sparkgear.net |
-| **Vercel** | https://tomaso-ecommerce.vercel.app |
-| **GitHub** | https://github.com/Tomer182/tomaso-ecommerce |
+| **Live Site** | [sparkgear.net](https://sparkgear.net) |
+| **Vercel** | [tomaso-ecommerce.vercel.app](https://tomaso-ecommerce.vercel.app) |
+| **GitHub** | [github.com/Tomer182/tomaso-ecommerce](https://github.com/Tomer182/tomaso-ecommerce) |
 
 ---
 
@@ -178,4 +200,4 @@ December 2025
 
 ---
 
-*Part of the Autopilot Commerce ecosystem*
+*Part of the Tomaso E-commerce ecosystem*

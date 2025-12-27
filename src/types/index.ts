@@ -71,6 +71,7 @@ export type ViewState =
   | 'success' 
   | 'wishlist-page' 
   | '404';
+// Note: admin-dashboard is accessed via secret URL only, not via ViewState
 
 // AI Types
 export interface AISearchResult {
