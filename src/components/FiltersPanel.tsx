@@ -21,6 +21,7 @@ interface FiltersPanelProps {
   onFiltersChange: (filters: FilterState) => void;
   maxPrice: number;
   productCount: number;
+  mode?: 'sidebar' | 'drawer'; // sidebar = always visible, drawer = mobile overlay
 }
 
 export const FiltersPanel: React.FC<FiltersPanelProps> = ({
@@ -29,7 +30,8 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({
   filters,
   onFiltersChange,
   maxPrice,
-  productCount
+  productCount,
+  mode = 'drawer'
 }) => {
   const [expandedSections, setExpandedSections] = useState({
     sort: true,
@@ -390,12 +392,18 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({
     </div>
   );
 
-  // If not open (desktop sidebar), just render the content
-  if (!isOpen) {
-    return <FilterContent />;
+  // Sidebar mode - always visible with scroll
+  if (mode === 'sidebar') {
+    return (
+      <div className="max-h-[calc(100vh-200px)] overflow-y-auto pr-2 -mr-2 scrollbar-thin">
+        <FilterContent />
+      </div>
+    );
   }
 
-  // Mobile Drawer
+  // Drawer mode - only show when open
+  if (!isOpen) return null;
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -406,7 +414,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
           />
 
           {/* Drawer */}
@@ -415,7 +423,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({
             animate={{ x: 0 }}
             exit={{ x: -320 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed left-0 top-0 h-full w-80 bg-white z-50 shadow-2xl overflow-y-auto"
+            className="fixed left-0 top-0 h-full w-80 bg-white z-[110] shadow-2xl overflow-y-auto"
           >
             {/* Mobile Header */}
             <div className="sticky top-0 bg-white border-b border-shop-border p-4 flex items-center justify-between z-10">

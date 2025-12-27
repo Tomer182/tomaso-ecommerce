@@ -1069,20 +1069,18 @@ export const App = () => {
               </div>
 
               <div className="flex flex-col lg:flex-row gap-12">
-                {/* Mobile Filters Drawer */}
-                <div className="lg:hidden">
-                  <FiltersPanel
-                    isOpen={showMobileFilters}
-                    onClose={() => setShowMobileFilters(false)}
-                    filters={filters}
-                    onFiltersChange={setFilters}
-                    maxPrice={maxPrice}
-                    productCount={products.filter(p => {
-                      if (searchResults) return searchResults.ids.includes(p.id);
-                      return activeCategory === 'All' || p.category === activeCategory;
-                    }).length}
-                  />
-                </div>
+                {/* Mobile Filters Drawer - Only renders when open */}
+                <FiltersPanel
+                  isOpen={showMobileFilters}
+                  onClose={() => setShowMobileFilters(false)}
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                  maxPrice={maxPrice}
+                  productCount={products.filter(p => {
+                    if (searchResults) return searchResults.ids.includes(p.id);
+                    return activeCategory === 'All' || p.category === activeCategory;
+                  }).length}
+                />
 
                 {/* Desktop Filters Sidebar */}
                 <aside className="hidden lg:block w-64 shrink-0">
@@ -1115,6 +1113,7 @@ export const App = () => {
                         if (searchResults) return searchResults.ids.includes(p.id);
                         return activeCategory === 'All' || p.category === activeCategory;
                       }).length}
+                      mode="sidebar"
                     />
                   </div>
                 </aside>
