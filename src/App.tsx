@@ -623,7 +623,7 @@ export const App = () => {
   
   // Products state - fetched from Supabase with fallback
   const [products, setProducts] = useState<Product[]>(FALLBACK_PRODUCTS);
-  const [categories, setCategories] = useState<string[]>(FALLBACK_categories);
+  const [categories, setCategories] = useState<string[]>(FALLBACK_CATEGORIES);
   
   const { 
     cart, addToCart, updateQuantity, removeFromCart, clearCart,
