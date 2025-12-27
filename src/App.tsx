@@ -734,6 +734,7 @@ export const App = () => {
 
   const navigateToProduct = (p: Product) => {
     setSelectedProduct(p);
+    setSelectedImageIndex(0); // Reset to first image
     setView('product-detail');
     addToRecentlyViewed(p.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
