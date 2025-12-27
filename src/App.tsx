@@ -642,6 +642,7 @@ export const App = () => {
 
   const [view, setView] = useState<ViewState>('home');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   
@@ -1214,10 +1215,43 @@ export const App = () => {
               <ArrowLeft size={16}/> Back to Shop
             </button>
             <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 mb-20">
-              <div className="relative group">
+              <div className="relative group space-y-4">
+                {/* Main Image */}
                 <div className="aspect-square bg-white rounded-[2.5rem] overflow-hidden border p-2 shadow-sm">
-                  <img src={selectedProduct.image} className="w-full h-full object-cover rounded-[2.2rem] transition-transform duration-1000 group-hover:scale-105" alt={selectedProduct.name} />
+                  <img 
+                    src={selectedImageIndex !== null && selectedProduct.images?.[selectedImageIndex] 
+                      ? selectedProduct.images[selectedImageIndex] 
+                      : selectedProduct.image} 
+                    className="w-full h-full object-cover rounded-[2.2rem] transition-transform duration-1000 group-hover:scale-105" 
+                    alt={selectedProduct.name} 
+                  />
                 </div>
+                
+                {/* Thumbnail Gallery */}
+                {selectedProduct.images && selectedProduct.images.length > 1 && (
+                  <div className="grid grid-cols-5 gap-2">
+                    {selectedProduct.images.slice(0, 5).map((img: string, idx: number) => (
+                      <button
+                        key={idx}
+                        onClick={() => setSelectedImageIndex(idx)}
+                        className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${
+                          selectedImageIndex === idx 
+                            ? 'border-shop-primary ring-2 ring-shop-primary/20' 
+                            : 'border-transparent hover:border-shop-border'
+                        }`}
+                      >
+                        <img src={img} alt={`${selectedProduct.name} ${idx + 1}`} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+                
+                {/* More images indicator */}
+                {selectedProduct.images && selectedProduct.images.length > 5 && (
+                  <p className="text-xs text-center text-shop-muted">
+                    +{selectedProduct.images.length - 5} more images
+                  </p>
+                )}
               </div>
               <div className="flex flex-col justify-center">
                 <div className="flex items-center gap-2 mb-6">

@@ -1,98 +1,55 @@
 /**
- * ALL ORDERS PAGE
+ * ALL ORDERS PAGE - Connected to Real Data
  * View and manage orders from all stores
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Package, Truck, CheckCircle, Clock, XCircle, Eye, Send } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, XCircle, Eye, Send, RefreshCw } from 'lucide-react';
 import { DataTable } from '../../shared/components/DataTable';
 import { Button } from '../../shared/components/Button';
 import { Modal } from '../../shared/components/Modal';
-import { Store } from '../../lib/stores';
+import { Select } from '../../shared/components/Input';
+import { Store, fetchOrders, formatOrder, updateOrder, fetchOrderDetails, AdminOrder } from '../../lib/adminApi';
 
 interface AllOrdersProps {
   currentStore: Store | null;
 }
 
-// Mock orders data
-const MOCK_ORDERS = [
-  {
-    id: 'ORD-001',
-    orderNumber: 'SG-2024-001',
-    customer: 'דניאל כהן',
-    email: 'daniel@email.com',
-    store: 'SparkGear',
-    items: 3,
-    total: 249.99,
-    status: 'pending',
-    supplier: 'CJDropshipping',
-    tracking: null,
-    date: '2024-12-27T10:30:00',
-  },
-  {
-    id: 'ORD-002',
-    orderNumber: 'FH-2024-015',
-    customer: 'מיכל לוי',
-    email: 'michal@email.com',
-    store: 'FunHouse',
-    items: 1,
-    total: 89.99,
-    status: 'shipped',
-    supplier: 'CJDropshipping',
-    tracking: 'CJ1234567890',
-    date: '2024-12-26T14:20:00',
-  },
-  {
-    id: 'ORD-003',
-    orderNumber: 'SG-2024-002',
-    customer: 'יוסי אברהם',
-    email: 'yossi@email.com',
-    store: 'SparkGear',
-    items: 2,
-    total: 159.99,
-    status: 'processing',
-    supplier: 'CJDropshipping',
-    tracking: null,
-    date: '2024-12-26T09:15:00',
-  },
-  {
-    id: 'ORD-004',
-    orderNumber: 'FH-2024-016',
-    customer: 'רונית שמעון',
-    email: 'ronit@email.com',
-    store: 'FunHouse',
-    items: 4,
-    total: 199.99,
-    status: 'delivered',
-    supplier: 'Spocket',
-    tracking: 'SP9876543210',
-    date: '2024-12-25T16:45:00',
-  },
-  {
-    id: 'ORD-005',
-    orderNumber: 'SG-2024-003',
-    customer: 'אבי ישראלי',
-    email: 'avi@email.com',
-    store: 'SparkGear',
-    items: 1,
-    total: 49.99,
-    status: 'cancelled',
-    supplier: null,
-    tracking: null,
-    date: '2024-12-24T11:00:00',
-  },
-];
-
 export const AllOrders: React.FC<AllOrdersProps> = ({ currentStore }) => {
   const [filter, setFilter] = useState('all');
+  const [orders, setOrders] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // Filter orders by store if selected
-  const filteredOrders = MOCK_ORDERS.filter((order) => {
-    if (currentStore && order.store !== currentStore.name) return false;
-    if (filter !== 'all' && order.status !== filter) return false;
-    return true;
+  const loadOrders = async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchOrders();
+      const formatted = data.map(formatOrder);
+      
+      // Filter by current store if selected
+      const filtered = currentStore 
+        ? formatted.filter(o => o.storeId === currentStore.id)
+        : formatted;
+      
+      setOrders(filtered);
+    } catch (error) {
+      console.error('Error loading orders:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadOrders();
+  }, [currentStore]);
+
+  // Filter orders by status
+  const filteredOrders = orders.filter((order) => {
+    if (filter === 'all') return true;
+    return order.status === filter;
   });
 
   const filters = [
@@ -103,6 +60,21 @@ export const AllOrders: React.FC<AllOrdersProps> = ({ currentStore }) => {
     { label: 'הושלמו', value: 'delivered' },
     { label: 'בוטלו', value: 'cancelled' },
   ];
+
+  const handleUpdateStatus = async (orderId: string, newStatus: string, tracking?: string) => {
+    setIsUpdating(true);
+    try {
+      const success = await updateOrder(orderId, newStatus, tracking);
+      if (success) {
+        await loadOrders();
+        setSelectedOrder(null);
+      }
+    } catch (error) {
+      console.error('Error updating order:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const styles: any = {
@@ -129,7 +101,7 @@ export const AllOrders: React.FC<AllOrdersProps> = ({ currentStore }) => {
       header: 'מספר הזמנה',
       sortable: true,
       render: (order: any) => (
-        <span className="font-mono font-bold text-shop-primary">{order.orderNumber}</span>
+        <span className="font-mono font-bold text-shop-primary">{order.orderNumber || order.id.slice(0, 8)}</span>
       ),
     },
     {
@@ -142,8 +114,6 @@ export const AllOrders: React.FC<AllOrdersProps> = ({ currentStore }) => {
         </div>
       ),
     },
-    { key: 'store', header: 'חנות' },
-    { key: 'items', header: 'פריטים' },
     {
       key: 'total',
       header: 'סכום',
@@ -158,11 +128,20 @@ export const AllOrders: React.FC<AllOrdersProps> = ({ currentStore }) => {
       render: (order: any) => getStatusBadge(order.status),
     },
     {
-      key: 'supplier',
-      header: 'ספק',
+      key: 'tracking',
+      header: 'מעקב',
       render: (order: any) => (
-        <span className={order.supplier ? 'text-shop-primary' : 'text-shop-muted'}>
-          {order.supplier || '-'}
+        <span className={order.tracking ? 'font-mono text-shop-primary text-xs' : 'text-shop-muted'}>
+          {order.tracking || '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'date',
+      header: 'תאריך',
+      render: (order: any) => (
+        <span className="text-shop-muted text-sm">
+          {new Date(order.date).toLocaleDateString('he-IL')}
         </span>
       ),
     },
@@ -181,18 +160,6 @@ export const AllOrders: React.FC<AllOrdersProps> = ({ currentStore }) => {
           >
             <Eye size={16} className="text-shop-primary" />
           </button>
-          {order.status === 'pending' && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                console.log('Send to supplier:', order.id);
-              }}
-              className="p-2 bg-shop-cta/10 rounded-lg hover:bg-shop-cta/20 transition-colors"
-              title="שלח לספק"
-            >
-              <Send size={16} className="text-shop-cta" />
-            </button>
-          )}
         </div>
       ),
     },
@@ -214,6 +181,15 @@ export const AllOrders: React.FC<AllOrdersProps> = ({ currentStore }) => {
             {filteredOrders.length} הזמנות
           </p>
         </div>
+        
+        <Button
+          variant="outline"
+          icon={<RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />}
+          onClick={loadOrders}
+          disabled={isLoading}
+        >
+          רענן
+        </Button>
       </div>
 
       {/* Filters */}
@@ -238,8 +214,9 @@ export const AllOrders: React.FC<AllOrdersProps> = ({ currentStore }) => {
         columns={columns}
         data={filteredOrders}
         searchPlaceholder="חפש לפי מספר הזמנה או לקוח..."
-        emptyMessage="אין הזמנות להצגה"
+        emptyMessage={isLoading ? "טוען נתונים..." : "אין הזמנות להצגה"}
         emptyIcon={<Package size={48} className="text-shop-border" />}
+        isLoading={isLoading}
         onRowClick={(order) => setSelectedOrder(order)}
       />
 
@@ -247,7 +224,7 @@ export const AllOrders: React.FC<AllOrdersProps> = ({ currentStore }) => {
       <Modal
         isOpen={!!selectedOrder}
         onClose={() => setSelectedOrder(null)}
-        title={`הזמנה ${selectedOrder?.orderNumber}`}
+        title={`הזמנה ${selectedOrder?.orderNumber || selectedOrder?.id?.slice(0, 8)}`}
         size="lg"
       >
         {selectedOrder && (
@@ -257,10 +234,6 @@ export const AllOrders: React.FC<AllOrdersProps> = ({ currentStore }) => {
               <div>
                 <p className="text-xs font-bold text-shop-muted uppercase mb-1">סטטוס</p>
                 {getStatusBadge(selectedOrder.status)}
-              </div>
-              <div>
-                <p className="text-xs font-bold text-shop-muted uppercase mb-1">חנות</p>
-                <p className="font-bold text-shop-primary">{selectedOrder.store}</p>
               </div>
               <div>
                 <p className="text-xs font-bold text-shop-muted uppercase mb-1">תאריך</p>
@@ -273,23 +246,22 @@ export const AllOrders: React.FC<AllOrdersProps> = ({ currentStore }) => {
             {/* Customer Info */}
             <div>
               <h4 className="text-sm font-black text-shop-primary uppercase mb-3">פרטי לקוח</h4>
-              <div className="p-4 bg-shop-bg rounded-xl">
+              <div className="p-4 bg-shop-bg rounded-xl space-y-1">
                 <p className="font-bold text-shop-primary">{selectedOrder.customer}</p>
                 <p className="text-sm text-shop-muted">{selectedOrder.email}</p>
+                {selectedOrder.phone && <p className="text-sm text-shop-muted">{selectedOrder.phone}</p>}
+                {selectedOrder.address && <p className="text-sm text-shop-muted">{selectedOrder.address}</p>}
               </div>
             </div>
 
-            {/* Supplier Info */}
+            {/* Tracking */}
             <div>
-              <h4 className="text-sm font-black text-shop-primary uppercase mb-3">ספק</h4>
+              <h4 className="text-sm font-black text-shop-primary uppercase mb-3">מעקב משלוח</h4>
               <div className="p-4 bg-shop-bg rounded-xl">
-                <p className="font-bold text-shop-primary">
-                  {selectedOrder.supplier || 'לא נשלח לספק'}
-                </p>
-                {selectedOrder.tracking && (
-                  <p className="text-sm text-shop-muted mt-1">
-                    מעקב: <span className="font-mono">{selectedOrder.tracking}</span>
-                  </p>
+                {selectedOrder.tracking ? (
+                  <p className="font-mono font-bold text-shop-primary">{selectedOrder.tracking}</p>
+                ) : (
+                  <p className="text-shop-muted">לא הוזן מספר מעקב</p>
                 )}
               </div>
             </div>
@@ -297,23 +269,39 @@ export const AllOrders: React.FC<AllOrdersProps> = ({ currentStore }) => {
             {/* Order Summary */}
             <div>
               <h4 className="text-sm font-black text-shop-primary uppercase mb-3">סיכום</h4>
-              <div className="p-4 bg-shop-bg rounded-xl">
+              <div className="p-4 bg-shop-cta/10 rounded-xl border border-shop-cta/20">
                 <div className="flex justify-between items-center">
-                  <span className="text-shop-muted">{selectedOrder.items} פריטים</span>
-                  <span className="font-mono font-black text-xl text-shop-cta">
+                  <span className="text-shop-primary font-bold">סה״כ</span>
+                  <span className="font-mono font-black text-2xl text-shop-cta">
                     ${selectedOrder.total.toFixed(2)}
                   </span>
                 </div>
               </div>
             </div>
 
+            {/* Update Status */}
+            <div>
+              <h4 className="text-sm font-black text-shop-primary uppercase mb-3">עדכון סטטוס</h4>
+              <div className="flex gap-2 flex-wrap">
+                {['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => handleUpdateStatus(selectedOrder.id, status)}
+                    disabled={isUpdating || selectedOrder.status === status}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50 ${
+                      selectedOrder.status === status
+                        ? 'bg-shop-primary text-white'
+                        : 'bg-shop-bg text-shop-text-secondary hover:bg-shop-border'
+                    }`}
+                  >
+                    {filters.find(f => f.value === status)?.label || status}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Actions */}
             <div className="flex gap-3">
-              {selectedOrder.status === 'pending' && (
-                <Button variant="primary" icon={<Send size={16} />}>
-                  שלח לספק
-                </Button>
-              )}
               <Button variant="outline" onClick={() => setSelectedOrder(null)}>
                 סגור
               </Button>
@@ -326,4 +314,3 @@ export const AllOrders: React.FC<AllOrdersProps> = ({ currentStore }) => {
 };
 
 export default AllOrders;
-

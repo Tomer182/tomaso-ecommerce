@@ -1,200 +1,170 @@
 /**
- * ALL PRODUCTS PAGE
- * Manage products from all stores
+ * ALL PRODUCTS PAGE - Connected to Real Data
+ * View and manage products from all stores
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, Plus, Edit, Trash2, Eye, Package } from 'lucide-react';
+import { Package, Plus, Edit, RefreshCw, AlertCircle } from 'lucide-react';
 import { DataTable } from '../../shared/components/DataTable';
 import { Button } from '../../shared/components/Button';
-import { Modal, ConfirmModal } from '../../shared/components/Modal';
-import { Input, Textarea, Select } from '../../shared/components/Input';
-import { Store } from '../../lib/stores';
+import { Store, fetchProducts, formatProduct } from '../../lib/adminApi';
 
 interface AllProductsProps {
   currentStore: Store | null;
 }
 
-// Mock products data
-const MOCK_PRODUCTS = [
-  {
-    id: 'prod-001',
-    name: 'TWS Pro Earbuds',
-    category: 'אוזניות',
-    store: 'SparkGear',
-    price: 35.00,
-    cost: 12.00,
-    stock: 50,
-    status: 'active',
-    image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=100',
-  },
-  {
-    id: 'prod-002',
-    name: 'Wireless Charger 3-in-1',
-    category: 'מטענים',
-    store: 'SparkGear',
-    price: 35.00,
-    cost: 12.00,
-    stock: 25,
-    status: 'active',
-    image: 'https://images.unsplash.com/photo-1615526675159-e248c3021d3f?w=100',
-  },
-  {
-    id: 'prod-003',
-    name: 'Disco Ball Light',
-    category: 'תאורה',
-    store: 'FunHouse',
-    price: 24.99,
-    cost: 11.50,
-    stock: 30,
-    status: 'active',
-    image: 'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=100',
-  },
-  {
-    id: 'prod-004',
-    name: 'Lava Lamp XL',
-    category: 'רטרו',
-    store: 'FunHouse',
-    price: 34.99,
-    cost: 19.00,
-    stock: 5,
-    status: 'low_stock',
-    image: 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?w=100',
-  },
-  {
-    id: 'prod-005',
-    name: 'Smart LED Strip',
-    category: 'תאורה',
-    store: 'SparkGear',
-    price: 15.00,
-    cost: 5.00,
-    stock: 0,
-    status: 'out_of_stock',
-    image: 'https://images.unsplash.com/photo-1615764447392-bd0929b5ebaf?w=100',
-  },
-];
-
 export const AllProducts: React.FC<AllProductsProps> = ({ currentStore }) => {
   const [filter, setFilter] = useState('all');
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editProduct, setEditProduct] = useState<any>(null);
-  const [deleteProduct, setDeleteProduct] = useState<any>(null);
+  const [products, setProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Filter products
-  const filteredProducts = MOCK_PRODUCTS.filter((product) => {
-    if (currentStore && product.store !== currentStore.name) return false;
-    if (filter === 'low_stock') return product.stock <= 5 && product.stock > 0;
-    if (filter === 'out_of_stock') return product.stock === 0;
-    if (filter !== 'all' && product.status !== filter) return false;
-    return true;
+  const loadProducts = async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchProducts();
+      const formatted = data.map(formatProduct);
+      
+      // Filter by current store if selected
+      const filtered = currentStore 
+        ? formatted.filter(p => p.storeId === currentStore.id)
+        : formatted;
+      
+      setProducts(filtered);
+    } catch (error) {
+      console.error('Error loading products:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProducts();
+  }, [currentStore]);
+
+  // Filter products by status
+  const filteredProducts = products.filter((product) => {
+    if (filter === 'all') return true;
+    return product.status === filter;
   });
 
   const filters = [
     { label: 'הכל', value: 'all' },
-    { label: 'פעילים', value: 'active' },
+    { label: 'פעיל', value: 'active' },
     { label: 'מלאי נמוך', value: 'low_stock' },
-    { label: 'אזל המלאי', value: 'out_of_stock' },
+    { label: 'אזל', value: 'out_of_stock' },
   ];
 
-  const getStockBadge = (stock: number) => {
-    if (stock === 0) {
-      return <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-[10px] font-bold">אזל</span>;
-    }
-    if (stock <= 5) {
-      return <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-[10px] font-bold">{stock} יח׳</span>;
-    }
-    return <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold">{stock} יח׳</span>;
+  const getStatusBadge = (status: string) => {
+    const styles: any = {
+      active: 'bg-green-100 text-green-700',
+      low_stock: 'bg-amber-100 text-amber-700',
+      out_of_stock: 'bg-red-100 text-red-700',
+    };
+    const labels: any = {
+      active: 'פעיל',
+      low_stock: 'מלאי נמוך',
+      out_of_stock: 'אזל',
+    };
+    return (
+      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${styles[status] || styles.active}`}>
+        {labels[status] || status}
+      </span>
+    );
   };
 
   const columns = [
     {
       key: 'image',
-      header: 'תמונה',
+      header: '',
       render: (product: any) => (
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-12 h-12 rounded-lg object-cover"
-        />
+        <div className="w-12 h-12 rounded-lg overflow-hidden bg-shop-bg flex-shrink-0">
+          <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+        </div>
       ),
     },
     {
       key: 'name',
-      header: 'שם מוצר',
+      header: 'מוצר',
       sortable: true,
       render: (product: any) => (
-        <div>
-          <p className="font-bold text-shop-primary">{product.name}</p>
-          <p className="text-xs text-shop-muted">{product.category}</p>
+        <div className="flex items-center gap-3">
+          <div>
+            <p className="font-bold text-shop-primary">{product.name}</p>
+            <p className="text-xs text-shop-muted">{product.category}</p>
+          </div>
+          {product.isNew && (
+            <span className="px-2 py-0.5 bg-shop-accent text-white text-[9px] font-bold rounded-full">NEW</span>
+          )}
+          {product.isBestSeller && (
+            <span className="px-2 py-0.5 bg-shop-cta text-white text-[9px] font-bold rounded-full">BEST</span>
+          )}
+          {product.isSale && (
+            <span className="px-2 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full">SALE</span>
+          )}
         </div>
       ),
     },
-    { key: 'store', header: 'חנות' },
     {
       key: 'price',
       header: 'מחיר',
       sortable: true,
       render: (product: any) => (
-        <span className="font-mono font-bold text-shop-primary">${product.price.toFixed(2)}</span>
+        <div>
+          <span className="font-mono font-bold text-shop-cta">${product.price.toFixed(2)}</span>
+          {product.originalPrice && (
+            <span className="text-xs text-shop-muted line-through ml-2">
+              ${product.originalPrice.toFixed(2)}
+            </span>
+          )}
+        </div>
       ),
-    },
-    {
-      key: 'cost',
-      header: 'עלות',
-      render: (product: any) => (
-        <span className="font-mono text-shop-muted">${product.cost.toFixed(2)}</span>
-      ),
-    },
-    {
-      key: 'profit',
-      header: 'רווח',
-      render: (product: any) => {
-        const profit = product.price - product.cost;
-        const margin = ((profit / product.price) * 100).toFixed(0);
-        return (
-          <div>
-            <span className="font-mono font-bold text-shop-cta">${profit.toFixed(2)}</span>
-            <span className="text-xs text-shop-muted mr-1">({margin}%)</span>
-          </div>
-        );
-      },
     },
     {
       key: 'stock',
       header: 'מלאי',
       sortable: true,
-      render: (product: any) => getStockBadge(product.stock),
-    },
-    {
-      key: 'actions',
-      header: 'פעולות',
       render: (product: any) => (
-        <div className="flex gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setEditProduct(product);
-            }}
-            className="p-2 bg-shop-bg rounded-lg hover:bg-shop-border transition-colors"
-            title="עריכה"
-          >
-            <Edit size={16} className="text-shop-primary" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setDeleteProduct(product);
-            }}
-            className="p-2 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-            title="מחיקה"
-          >
-            <Trash2 size={16} className="text-red-600" />
-          </button>
+        <div className="flex items-center gap-2">
+          <span className={`font-mono font-bold ${product.stock <= 5 ? 'text-red-600' : 'text-shop-primary'}`}>
+            {product.stock}
+          </span>
+          {product.stock <= 5 && product.stock > 0 && (
+            <AlertCircle size={14} className="text-amber-500" />
+          )}
         </div>
       ),
     },
+    {
+      key: 'status',
+      header: 'סטטוס',
+      render: (product: any) => getStatusBadge(product.status),
+    },
+    {
+      key: 'storeId',
+      header: 'חנות',
+      render: (product: any) => (
+        <span className="text-sm text-shop-muted capitalize">{product.storeId}</span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: '',
+      render: (product: any) => (
+        <button className="p-2 bg-shop-bg rounded-lg hover:bg-shop-border transition-colors">
+          <Edit size={16} className="text-shop-primary" />
+        </button>
+      ),
+    },
   ];
+
+  // Stats
+  const statsData = {
+    total: products.length,
+    active: products.filter(p => p.status === 'active').length,
+    lowStock: products.filter(p => p.status === 'low_stock').length,
+    outOfStock: products.filter(p => p.status === 'out_of_stock').length,
+  };
 
   return (
     <div>
@@ -212,14 +182,38 @@ export const AllProducts: React.FC<AllProductsProps> = ({ currentStore }) => {
             {filteredProducts.length} מוצרים
           </p>
         </div>
+        
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            icon={<RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />}
+            onClick={loadProducts}
+            disabled={isLoading}
+          >
+            רענן
+          </Button>
+          <Button icon={<Plus size={16} />}>הוסף מוצר</Button>
+        </div>
+      </div>
 
-        <Button
-          variant="primary"
-          icon={<Plus size={18} />}
-          onClick={() => setIsAddModalOpen(true)}
-        >
-          הוסף מוצר
-        </Button>
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-xl border border-shop-border p-4 text-center">
+          <p className="font-mono font-bold text-2xl text-shop-primary">{statsData.total}</p>
+          <p className="text-xs font-bold text-shop-muted">סה״כ</p>
+        </div>
+        <div className="bg-white rounded-xl border border-shop-border p-4 text-center">
+          <p className="font-mono font-bold text-2xl text-green-600">{statsData.active}</p>
+          <p className="text-xs font-bold text-shop-muted">פעיל</p>
+        </div>
+        <div className="bg-white rounded-xl border border-shop-border p-4 text-center">
+          <p className="font-mono font-bold text-2xl text-amber-600">{statsData.lowStock}</p>
+          <p className="text-xs font-bold text-shop-muted">מלאי נמוך</p>
+        </div>
+        <div className="bg-white rounded-xl border border-shop-border p-4 text-center">
+          <p className="font-mono font-bold text-2xl text-red-600">{statsData.outOfStock}</p>
+          <p className="text-xs font-bold text-shop-muted">אזל</p>
+        </div>
       </div>
 
       {/* Filters */}
@@ -244,99 +238,12 @@ export const AllProducts: React.FC<AllProductsProps> = ({ currentStore }) => {
         columns={columns}
         data={filteredProducts}
         searchPlaceholder="חפש מוצר..."
-        emptyMessage="אין מוצרים להצגה"
-        emptyIcon={<ShoppingBag size={48} className="text-shop-border" />}
-      />
-
-      {/* Add/Edit Product Modal */}
-      <Modal
-        isOpen={isAddModalOpen || !!editProduct}
-        onClose={() => {
-          setIsAddModalOpen(false);
-          setEditProduct(null);
-        }}
-        title={editProduct ? 'עריכת מוצר' : 'הוספת מוצר חדש'}
-        size="lg"
-        footer={
-          <>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsAddModalOpen(false);
-                setEditProduct(null);
-              }}
-            >
-              ביטול
-            </Button>
-            <Button variant="primary">
-              {editProduct ? 'שמור שינויים' : 'הוסף מוצר'}
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <Input
-            label="שם מוצר"
-            placeholder="הזן שם מוצר"
-            defaultValue={editProduct?.name}
-          />
-          <Textarea
-            label="תיאור"
-            placeholder="הזן תיאור מוצר"
-            rows={3}
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="מחיר"
-              type="number"
-              placeholder="0.00"
-              defaultValue={editProduct?.price}
-            />
-            <Input
-              label="עלות"
-              type="number"
-              placeholder="0.00"
-              defaultValue={editProduct?.cost}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Select
-              label="קטגוריה"
-              options={[
-                { value: 'אוזניות', label: 'אוזניות' },
-                { value: 'מטענים', label: 'מטענים' },
-                { value: 'תאורה', label: 'תאורה' },
-                { value: 'רטרו', label: 'רטרו' },
-              ]}
-              defaultValue={editProduct?.category}
-            />
-            <Input
-              label="מלאי"
-              type="number"
-              placeholder="0"
-              defaultValue={editProduct?.stock}
-            />
-          </div>
-        </div>
-      </Modal>
-
-      {/* Delete Confirmation */}
-      <ConfirmModal
-        isOpen={!!deleteProduct}
-        onClose={() => setDeleteProduct(null)}
-        onConfirm={() => {
-          console.log('Delete product:', deleteProduct?.id);
-          setDeleteProduct(null);
-        }}
-        title="מחיקת מוצר"
-        message={`האם אתה בטוח שברצונך למחוק את המוצר "${deleteProduct?.name}"? פעולה זו לא ניתנת לביטול.`}
-        confirmText="מחק"
-        cancelText="ביטול"
-        variant="danger"
+        emptyMessage={isLoading ? "טוען נתונים..." : "אין מוצרים להצגה"}
+        emptyIcon={<Package size={48} className="text-shop-border" />}
+        isLoading={isLoading}
       />
     </div>
   );
 };
 
 export default AllProducts;
-

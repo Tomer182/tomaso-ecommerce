@@ -1,12 +1,12 @@
 /**
  * OWNER APP - Main Entry Point
- * Command Center for Store Owner
+ * Command Center for Store Owner - Connected to Real Data
  */
 
 import React, { useState, useEffect } from 'react';
 import { AdminLayout, AdminPage } from '../shared/layouts/AdminLayout';
 import { getSession, logout, AdminUser } from '../lib/auth';
-import { getStores, getCurrentStore, setCurrentStore, Store } from '../lib/stores';
+import { fetchStores, setCurrentStore, getCurrentStoreId, Store, isConnected } from '../lib/adminApi';
 import { OwnerLogin } from './pages/OwnerLogin';
 import { OwnerDashboard } from './pages/OwnerDashboard';
 import { AllOrders } from './pages/AllOrders';
@@ -25,6 +25,7 @@ export const OwnerApp: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<AdminPage>('dashboard');
   const [stores, setStores] = useState<Store[]>([]);
   const [currentStore, setCurrentStoreState] = useState<Store | null>(null);
+  const [dataConnected, setDataConnected] = useState(false);
 
   // Check authentication on mount
   useEffect(() => {
@@ -34,14 +35,24 @@ export const OwnerApp: React.FC = () => {
       loadStores();
     }
     setIsLoading(false);
+    setDataConnected(isConnected());
   }, []);
 
-  const loadStores = () => {
-    const allStores = getStores();
-    setStores(allStores);
-    
-    const current = getCurrentStore();
-    setCurrentStoreState(current);
+  const loadStores = async () => {
+    try {
+      const allStores = await fetchStores();
+      setStores(allStores);
+      
+      // Get current store from localStorage or default to first
+      const savedStoreId = getCurrentStoreId();
+      const current = savedStoreId 
+        ? allStores.find(s => s.id === savedStoreId) || allStores[0]
+        : null;
+      
+      setCurrentStoreState(current || null);
+    } catch (error) {
+      console.error('Error loading stores:', error);
+    }
   };
 
   const handleLogin = () => {
@@ -63,10 +74,15 @@ export const OwnerApp: React.FC = () => {
     setCurrentStoreState(store);
   };
 
+  const handleClearStoreFilter = () => {
+    setCurrentStore(null as any);
+    setCurrentStoreState(null);
+  };
+
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <OwnerDashboard stores={stores} currentStore={currentStore} />;
+        return <OwnerDashboard stores={stores} currentStore={currentStore} onClearFilter={handleClearStoreFilter} />;
       case 'orders':
         return <AllOrders currentStore={currentStore} />;
       case 'products':
@@ -80,7 +96,7 @@ export const OwnerApp: React.FC = () => {
       case 'settings':
         return <SystemSettings />;
       default:
-        return <OwnerDashboard stores={stores} currentStore={currentStore} />;
+        return <OwnerDashboard stores={stores} currentStore={currentStore} onClearFilter={handleClearStoreFilter} />;
     }
   };
 
@@ -110,10 +126,20 @@ export const OwnerApp: React.FC = () => {
       currentStore={currentStore || undefined}
       onStoreChange={handleStoreChange}
     >
+      {/* Connection Status Banner */}
+      {!dataConnected && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-center gap-3">
+          <div className="w-3 h-3 bg-amber-500 rounded-full animate-pulse" />
+          <div>
+            <p className="text-sm font-bold text-amber-800">לא מחובר ל-Supabase</p>
+            <p className="text-xs text-amber-600">הנתונים המוצגים הם לדוגמה בלבד. הגדר את משתני הסביבה VITE_SUPABASE_URL ו-VITE_SUPABASE_ANON_KEY</p>
+          </div>
+        </div>
+      )}
+      
       {renderPage()}
     </AdminLayout>
   );
 };
 
 export default OwnerApp;
-

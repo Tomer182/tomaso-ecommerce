@@ -44,9 +44,19 @@
 - Smart order routing (cheapest/fastest/preferred)
 - Admin dashboard for order management
 
+### 🖥️ Autopilot Command Center ✅ NEW!
+- **Owner Dashboard** - Central management for all stores
+- **Store Switcher** - Filter data by store (SparkGear, FunHouse)
+- **Real-time Stats** - Connected to Supabase
+- **Orders Management** - View/update order status
+- **Products** - Full product catalog with stock alerts
+- **Customers** - Customer database
+- **Hebrew UI** - Full RTL Hebrew interface
+- **Access:** `/command-center` (password protected)
+
 ### Integrations ✅
 - Stripe payment ready
-- Supabase database ready
+- Supabase database ready (✅ Connected!)
 - Gemini AI connected
 - Vercel deployed
 
@@ -115,13 +125,25 @@ sparkgear/
 │   ├── lib/
 │   │   ├── ai.ts                 # Gemini integration
 │   │   ├── stripe.ts             # Stripe integration
-│   │   ├── supabase.ts           # Supabase client
+│   │   ├── supabase.ts           # Supabase client + Admin functions
 │   │   ├── productSuppliers.ts   # Supplier mapping
 │   │   ├── cjdropshipping.ts     # CJ API
 │   │   ├── orderRouter.ts        # Smart routing
 │   │   └── orderService.ts       # Order orchestration
+│   ├── admin/                    # ✅ Command Center (NEW!)
+│   │   ├── index.ts              # Root entry
+│   │   ├── lib/
+│   │   │   ├── auth.ts           # Authentication
+│   │   │   ├── stores.ts         # Store management
+│   │   │   └── adminApi.ts       # Supabase API layer
+│   │   ├── shared/
+│   │   │   ├── components/       # Button, Input, DataTable, Modal, Chart
+│   │   │   ├── layouts/          # AdminLayout + Store Switcher
+│   │   │   └── styles/admin.css  # RTL Hebrew styles
+│   │   └── owner/
+│   │       ├── OwnerApp.tsx      # Main owner app
+│   │       └── pages/            # Dashboard, Orders, Products, etc.
 │   ├── pages/
-│   │   ├── AdminDashboard.tsx    # Order management
 │   │   ├── CheckoutPage.tsx
 │   │   └── SuccessPage.tsx
 │   └── types/
@@ -156,6 +178,7 @@ sparkgear/
 | Resource | URL |
 |----------|-----|
 | **Live Site** | [sparkgear.net](https://sparkgear.net) |
+| **🖥️ Command Center** | [sparkgear.net/command-center](https://sparkgear.net/command-center) |
 | **Vercel** | [tomaso-ecommerce.vercel.app](https://tomaso-ecommerce.vercel.app) |
 | **GitHub** | [github.com/Tomer182/tomaso-ecommerce](https://github.com/Tomer182/tomaso-ecommerce) |
 

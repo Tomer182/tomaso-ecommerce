@@ -156,6 +156,308 @@ export const getOrderById = async (id: string) => {
   return data;
 };
 
+// =============================================
+// ADMIN FUNCTIONS - For Command Center
+// =============================================
+
+export interface AdminOrder {
+  id: string;
+  store_id: string;
+  order_number: string;
+  customer_id?: string;
+  customer_email: string;
+  customer_name: string;
+  shipping_address: string;
+  shipping_city: string;
+  shipping_state: string;
+  shipping_zip: string;
+  shipping_country: string;
+  shipping_phone?: string;
+  subtotal: number;
+  shipping_cost: number;
+  discount: number;
+  total: number;
+  payment_method: string;
+  payment_status: string;
+  status: string;
+  tracking_number?: string;
+  supplier_order_id?: string;
+  promo_code?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminCustomer {
+  id: string;
+  store_id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  country: string;
+  total_orders?: number;
+  total_spent?: number;
+  created_at: string;
+}
+
+export interface AdminProduct {
+  id: string;
+  store_id: string;
+  name: string;
+  description?: string;
+  price: number;
+  original_price?: number;
+  image_url: string;
+  category: string;
+  stock: number;
+  sku?: string;
+  is_new: boolean;
+  is_best_seller: boolean;
+  is_sale: boolean;
+  created_at: string;
+}
+
+export interface AdminStats {
+  totalOrders: number;
+  totalRevenue: number;
+  totalCustomers: number;
+  totalProducts: number;
+  pendingOrders: number;
+}
+
+// Get all orders for admin (with optional store filter)
+export const getAdminOrders = async (storeId?: string): Promise<AdminOrder[]> => {
+  if (!supabase) return [];
+  
+  let query = supabase
+    .from('orders')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (storeId) {
+    query = query.eq('store_id', storeId);
+  }
+  
+  const { data, error } = await query;
+  
+  if (error) {
+    console.error('Error fetching orders:', error);
+    return [];
+  }
+  
+  return data || [];
+};
+
+// Get all customers for admin (with optional store filter)
+export const getAdminCustomers = async (storeId?: string): Promise<AdminCustomer[]> => {
+  if (!supabase) return [];
+  
+  let query = supabase
+    .from('customers')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (storeId) {
+    query = query.eq('store_id', storeId);
+  }
+  
+  const { data, error } = await query;
+  
+  if (error) {
+    console.error('Error fetching customers:', error);
+    return [];
+  }
+  
+  return data || [];
+};
+
+// Get all products for admin (with optional store filter)
+export const getAdminProducts = async (storeId?: string): Promise<AdminProduct[]> => {
+  if (!supabase) return [];
+  
+  let query = supabase
+    .from('products')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (storeId) {
+    query = query.eq('store_id', storeId);
+  }
+  
+  const { data, error } = await query;
+  
+  if (error) {
+    console.error('Error fetching products:', error);
+    return [];
+  }
+  
+  return data || [];
+};
+
+// Get admin stats (with optional store filter)
+export const getAdminStats = async (storeId?: string): Promise<AdminStats> => {
+  if (!supabase) {
+    return {
+      totalOrders: 0,
+      totalRevenue: 0,
+      totalCustomers: 0,
+      totalProducts: 0,
+      pendingOrders: 0,
+    };
+  }
+  
+  try {
+    // Get orders
+    let ordersQuery = supabase.from('orders').select('id, total, status');
+    if (storeId) ordersQuery = ordersQuery.eq('store_id', storeId);
+    const { data: orders } = await ordersQuery;
+    
+    // Get customers
+    let customersQuery = supabase.from('customers').select('id', { count: 'exact' });
+    if (storeId) customersQuery = customersQuery.eq('store_id', storeId);
+    const { count: customersCount } = await customersQuery;
+    
+    // Get products
+    let productsQuery = supabase.from('products').select('id', { count: 'exact' });
+    if (storeId) productsQuery = productsQuery.eq('store_id', storeId);
+    const { count: productsCount } = await productsQuery;
+    
+    const totalOrders = orders?.length || 0;
+    const totalRevenue = orders?.reduce((sum, o) => sum + Number(o.total || 0), 0) || 0;
+    const pendingOrders = orders?.filter(o => o.status === 'pending').length || 0;
+    
+    return {
+      totalOrders,
+      totalRevenue,
+      totalCustomers: customersCount || 0,
+      totalProducts: productsCount || 0,
+      pendingOrders,
+    };
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    return {
+      totalOrders: 0,
+      totalRevenue: 0,
+      totalCustomers: 0,
+      totalProducts: 0,
+      pendingOrders: 0,
+    };
+  }
+};
+
+// Update order status
+export const updateOrderStatus = async (
+  orderId: string, 
+  status: string,
+  trackingNumber?: string
+): Promise<boolean> => {
+  if (!supabase) return false;
+  
+  const updateData: any = { 
+    status, 
+    updated_at: new Date().toISOString() 
+  };
+  
+  if (trackingNumber) {
+    updateData.tracking_number = trackingNumber;
+  }
+  
+  const { error } = await supabase
+    .from('orders')
+    .update(updateData)
+    .eq('id', orderId);
+  
+  if (error) {
+    console.error('Error updating order:', error);
+    return false;
+  }
+  
+  return true;
+};
+
+// Update product
+export const updateAdminProduct = async (
+  productId: string, 
+  updates: Partial<AdminProduct>
+): Promise<boolean> => {
+  if (!supabase) return false;
+  
+  const { error } = await supabase
+    .from('products')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', productId);
+  
+  if (error) {
+    console.error('Error updating product:', error);
+    return false;
+  }
+  
+  return true;
+};
+
+// Get order items
+export const getOrderItems = async (orderId: string) => {
+  if (!supabase) return [];
+  
+  const { data, error } = await supabase
+    .from('order_items')
+    .select('*')
+    .eq('order_id', orderId);
+  
+  if (error) {
+    console.error('Error fetching order items:', error);
+    return [];
+  }
+  
+  return data || [];
+};
+
+// Get available stores
+export const getStores = async () => {
+  if (!supabase) {
+    // Return default stores if no Supabase
+    return [
+      { id: 'sparkgear', name: 'SparkGear', domain: 'sparkgear.net', status: 'active' },
+      { id: 'funhouse', name: 'FunHouse', domain: 'funhouse.one', status: 'active' },
+    ];
+  }
+  
+  // Get unique store_ids from products
+  const { data } = await supabase
+    .from('products')
+    .select('store_id')
+    .limit(1000);
+  
+  if (!data) {
+    return [
+      { id: 'sparkgear', name: 'SparkGear', domain: 'sparkgear.net', status: 'active' },
+      { id: 'funhouse', name: 'FunHouse', domain: 'funhouse.one', status: 'active' },
+    ];
+  }
+  
+  const storeIds = [...new Set(data.map(p => p.store_id))];
+  
+  const storeMap: Record<string, { name: string; domain: string }> = {
+    sparkgear: { name: 'SparkGear', domain: 'sparkgear.net' },
+    funhouse: { name: 'FunHouse', domain: 'funhouse.one' },
+    autopilot: { name: 'Autopilot', domain: 'autopilot.com' },
+  };
+  
+  return storeIds.map(id => ({
+    id,
+    name: storeMap[id]?.name || id,
+    domain: storeMap[id]?.domain || `${id}.com`,
+    status: 'active' as const,
+  }));
+};
+
+// Check if Supabase is configured
+export const isSupabaseConfigured = () => supabase !== null;
+
 // SQL for creating tables (run this in Supabase SQL editor)
 export const SUPABASE_SCHEMA = `
 -- Products table
